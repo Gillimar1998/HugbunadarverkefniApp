@@ -6,7 +6,7 @@ import java.util.List;
 import retrofit2.Call;
 import retrofit2.http.GET;
 
-public class RecipeApiService {
+public interface RecipeApiService {
     @GET("recipes")
-    public Call<List<Recipe>> getRecipes();
+    Call<List<Recipe>> getRecipes();
 }
