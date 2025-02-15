@@ -30,8 +30,6 @@ public class RecipeAdapter extends RecyclerView.Adapter<RecipeAdapter.ViewHolder
     @Override
     public void onBindViewHolder(@NonNull ViewHolder holder, int position) {
         Recipe recipe = recipes.get(position);
-        holder.title.setText(recipe.getTitle());
-        Glide.with(holder.itemView.getContext()).load(recipe.getImage()).into(holder.image);
     }
 
     @Override
