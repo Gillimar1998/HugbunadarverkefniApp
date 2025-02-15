@@ -1,12 +1,27 @@
 package com.example.hugbunadarverkefni.model;
 
+import java.util.Date;
+import java.util.List;
+
 public class Recipe {
-    private String title;
-    private String image;
-    private String description;
+    private Long id;
+    private String name;
+    private String category;
+    private List<String> ingredients;
+    private Macros macros;
+    private int cookTime;  // Backend uses `Duration`, so use `int` (in seconds)
+    private Date creationDate;
+    private boolean privatePost;
+    private List<Long> likedUserIDs;
 
-    public String getTitle() { return title; }
-    public String getImage() { return image; }
-    public String getDescription() { return description; }
-
+    // Getters and Setters
+    public Long getId() { return id; }
+    public String getName() { return name; }
+    public String getCategory() { return category; }
+    public List<String> getIngredients() { return ingredients; }
+    public Macros getMacros() { return macros; }
+    public int getCookTime() { return cookTime; }
+    public Date getCreationDate() { return creationDate; }
+    public boolean isPrivatePost() { return privatePost; }
+    public List<Long> getLikedUserIDs() { return likedUserIDs; }
 }
