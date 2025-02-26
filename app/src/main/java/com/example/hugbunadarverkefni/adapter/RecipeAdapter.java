@@ -1,5 +1,6 @@
 package com.example.hugbunadarverkefni.adapter;
 
+import android.content.Context;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -15,8 +16,10 @@ import java.util.List;
 
 public class RecipeAdapter extends RecyclerView.Adapter<RecipeAdapter.ViewHolder> {
     private List<Recipe> recipes;
+    private Context context;
 
-    public RecipeAdapter(List<Recipe> recipes) {
+    public RecipeAdapter(Context context, List<Recipe> recipes) {
+        this.context = context;
         this.recipes = recipes;
     }
 
