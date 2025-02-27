@@ -9,7 +9,7 @@ public class Recipe {
     private String category;
     private List<String> ingredients;
     private Macros macros;
-    private int cookTime;  // Backend uses `Duration`, so use `int` (in seconds)
+    private String cookTime;  // Backend uses `Duration`, so use `int` (in seconds)
     private Date creationDate;
     private boolean privatePost;
     private List<Long> likedUserIDs;
@@ -20,7 +20,7 @@ public class Recipe {
     public String getCategory() { return category; }
     public List<String> getIngredients() { return ingredients; }
     public Macros getMacros() { return macros; }
-    public int getCookTime() { return cookTime; }
+    public String getCookTime() { return cookTime; }
     public Date getCreationDate() { return creationDate; }
     public boolean isPrivatePost() { return privatePost; }
     public List<Long> getLikedUserIDs() { return likedUserIDs; }

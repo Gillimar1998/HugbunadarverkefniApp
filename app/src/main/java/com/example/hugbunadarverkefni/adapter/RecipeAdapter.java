@@ -1,6 +1,7 @@
 package com.example.hugbunadarverkefni.adapter;
 
 import android.content.Context;
+import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -17,10 +18,17 @@ import java.util.List;
 public class RecipeAdapter extends RecyclerView.Adapter<RecipeAdapter.ViewHolder> {
     private List<Recipe> recipes;
     private Context context;
+    private OnRecipeClickListener listener;
 
-    public RecipeAdapter(Context context, List<Recipe> recipes) {
+    // Interface for handling clicks
+    public interface OnRecipeClickListener {
+        void onRecipeClick(Recipe recipe);
+    }
+
+    public RecipeAdapter(Context context, List<Recipe> recipes, OnRecipeClickListener listener) {
         this.context = context;
         this.recipes = recipes;
+        this.listener = listener;
     }
 
     @NonNull
@@ -33,6 +41,10 @@ public class RecipeAdapter extends RecyclerView.Adapter<RecipeAdapter.ViewHolder
     @Override
     public void onBindViewHolder(@NonNull ViewHolder holder, int position) {
         Recipe recipe = recipes.get(position);
+        holder.title.setText(recipe.getName());
+
+        // Set click listener
+        holder.itemView.setOnClickListener(v -> listener.onRecipeClick(recipe));
     }
 
     @Override
@@ -40,14 +52,13 @@ public class RecipeAdapter extends RecyclerView.Adapter<RecipeAdapter.ViewHolder
         return recipes.size();
     }
 
-    static class ViewHolder extends RecyclerView.ViewHolder {
+    public static class ViewHolder extends RecyclerView.ViewHolder {
         TextView title;
-        ImageView image;
 
         public ViewHolder(@NonNull View itemView) {
             super(itemView);
             title = itemView.findViewById(R.id.recipeTitle);
-            image = itemView.findViewById(R.id.recipeImage);
         }
     }
 }
+

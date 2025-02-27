@@ -72,35 +72,9 @@ public class MainActivity extends AppCompatActivity {
         appBarConfiguration = new AppBarConfiguration.Builder(navController.getGraph()).build();
         NavigationUI.setupActionBarWithNavController(this, navController, appBarConfiguration);
 
-        recyclerView = findViewById(R.id.recyclerView);
-        if (recyclerView != null) {
-            recyclerView.setLayoutManager(new LinearLayoutManager(this));
-        }
-
-        fetchRecipes();
     }
 
-    private void fetchRecipes() {
-        RecipeApiService apiService = RetrofitClient.getClient().create(RecipeApiService.class);
-        Call<List<Recipe>> call = apiService.getRecipes();
 
-        call.enqueue(new Callback<List<Recipe>>() {
-            @Override
-            public void onResponse(Call<List<Recipe>> call, Response<List<Recipe>> response) {
-                if (response.isSuccessful() && response.body() != null) {
-                    adapter = new RecipeAdapter(response.body());
-                    if (recyclerView != null) {
-                        recyclerView.setAdapter(adapter);
-                    }
-                }
-            }
-
-            @Override
-            public void onFailure(Call<List<Recipe>> call, Throwable t) {
-                Log.e("API Error", "Failed to fetch data: " + t.getMessage());
-            }
-        });
-    }
 
     @Override
     public boolean onCreateOptionsMenu(Menu menu) {
