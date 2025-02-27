@@ -3,7 +3,26 @@
     xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools"
     android:id="@+id/nav_graph"
-    app:startDestination="@id/FirstFragment">
+    app:startDestination="@id/RecipesViewFragment">
+
+    <fragment
+        android:id="@+id/RecipesViewFragment"
+        android:name="com.example.hugbunadarverkefni.ui.RecipesViewFragment"
+        android:label="@string/recipes_View_Fragment"
+        tools:layout="@layout/fragment_recipes_view">
+
+        <!-- ✅ Add this action to navigate to RecipeViewFragment -->
+        <action
+            android:id="@+id/action_RecipesViewFragment_to_RecipeViewFragment"
+            app:destination="@id/RecipeViewFragment" />
+    </fragment>
+
+    <!-- ✅ Add RecipeViewFragment -->
+    <fragment
+        android:id="@+id/RecipeViewFragment"
+        android:name="com.example.hugbunadarverkefni.ui.RecipeViewFragment"
+        android:label="Recipe Details"
+        tools:layout="@layout/fragment_recipe_view"/>
 
     <fragment
         android:id="@+id/FirstFragment"
@@ -15,6 +34,7 @@
             android:id="@+id/action_FirstFragment_to_SecondFragment"
             app:destination="@id/SecondFragment" />
     </fragment>
+
     <fragment
         android:id="@+id/SecondFragment"
         android:name="com.example.hugbunadarverkefni.ui.SecondFragment"

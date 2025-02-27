@@ -45,4 +45,5 @@
     </string>
     <string name="title_activity_register">RegisterActivity</string>
     <string name="title_activity_registry">RegistryActivity</string>
+    <string name="recipes_View_Fragment">Recipes</string>
 </resources>
