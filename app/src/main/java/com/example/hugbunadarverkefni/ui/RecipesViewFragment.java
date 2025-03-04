@@ -51,6 +51,13 @@ public class RecipesViewFragment extends Fragment {
 
         // Fetch recipes directly in the fragment
         fetchRecipes();
+
+        // Set up FloatingActionButton to navigate to AddRecipeFragment
+        binding.fabAddRecipe.setOnClickListener(v -> {
+            NavHostFragment.findNavController(RecipesViewFragment.this)
+                   .navigate(R.id.action_RecipesViewFragment_to_AddRecipeFragment);
+        });
+
     }
 
     private void fetchRecipes() {

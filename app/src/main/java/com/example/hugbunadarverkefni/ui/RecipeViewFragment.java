@@ -1,5 +1,6 @@
 package com.example.hugbunadarverkefni.ui;
 
+import android.os.Build;
 import android.os.Bundle;
 import android.util.Log;
 import android.view.LayoutInflater;
@@ -89,7 +90,9 @@ public class RecipeViewFragment extends Fragment {
     private void displayRecipeDetails(Recipe recipe) {
         titleTextView.setText(recipe.getName());
         categoryTextView.setText("Category: " + recipe.getCategory());
-        cookTimeTextView.setText("Duration: " + recipe.getCookTime() + " min");
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+            cookTimeTextView.setText("Duration: " + recipe.getCooktimeInMinutes() + " min");
+        }
         descriptionTextView.setText("Description: " + recipe.getDescription());
        // likesTextView.setText("Likes: " + recipe.getLikeCount());
 
