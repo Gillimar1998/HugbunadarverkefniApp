@@ -8,6 +8,7 @@ import retrofit2.http.Body;
 import retrofit2.http.GET;
 import retrofit2.http.POST;
 import retrofit2.http.Path;
+import retrofit2.http.Query;
 
 public interface RecipeApiService {
     @GET("/recipes")
@@ -19,5 +20,7 @@ public interface RecipeApiService {
     @POST("/recipes")
     Call<Recipe> addRecipe(@Body Recipe recipe);
 
+    @GET("/recipes/search")
+    Call<List<Recipe>> searchRecipes(@Query("name") String name);
 
 }

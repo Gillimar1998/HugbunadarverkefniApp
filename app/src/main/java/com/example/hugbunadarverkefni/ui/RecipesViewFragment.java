@@ -20,11 +20,16 @@ import java.util.List;
 import retrofit2.Call;
 import retrofit2.Callback;
 import retrofit2.Response;
+import android.widget.EditText;
+import android.widget.Button;
+
 
 public class RecipesViewFragment extends Fragment {
     private FragmentRecipesViewBinding binding;
     private RecipeAdapter recipeAdapter;
     private List<Recipe> recipeList = new ArrayList<>();
+    private EditText searchInput;
+    private Button searchButton;
 
     @Override
     public View onCreateView(@NonNull LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState) {
@@ -48,6 +53,20 @@ public class RecipesViewFragment extends Fragment {
 
         binding.recyclerView.setLayoutManager(new LinearLayoutManager(getContext()));
         binding.recyclerView.setAdapter(recipeAdapter);
+
+        searchInput = binding.searchInput;
+        searchButton = binding.searchButton;
+
+        searchButton.setOnClickListener(v -> {
+           String query = searchInput.getText().toString().trim();
+           if(!query.isEmpty()){
+               searchRecipes(query);
+
+           }
+           else{
+               fetchRecipes(); // If there is nothing in the query, we get all of the recipes.
+           }
+        });
 
         // Fetch recipes directly in the fragment
         fetchRecipes();
@@ -80,6 +99,30 @@ public class RecipesViewFragment extends Fragment {
 
             @Override
             public void onFailure(Call<List<Recipe>> call, Throwable t) {
+                Log.e("API Error", "Network Failure: " + t.getMessage());
+            }
+        });
+    }
+
+    private void searchRecipes(String query){
+        RecipeApiService apiService = RetrofitClient.getClient().create(RecipeApiService.class);
+        Call<List<Recipe>> call = apiService.searchRecipes(query);
+
+        call.enqueue(new Callback<List<Recipe>>() {
+            @Override
+            public void onResponse(@NonNull Call<List<Recipe>> call, @NonNull Response<List<Recipe>> response) {
+                if (response.isSuccessful() && response.body() != null) {
+                    Log.d("API Response", "Found " + response.body().size() + " recipes for search query: " + query);
+
+                    recipeList.clear();
+                    recipeList.addAll(response.body());
+                    recipeAdapter.notifyDataSetChanged();
+                } else {
+                    Log.e("API Error", "Failed to fetch search results: " + response.errorBody());
+                }
+            }
+            @Override
+            public void onFailure(@NonNull Call<List<Recipe>> call, @NonNull Throwable t) {
                 Log.e("API Error", "Network Failure: " + t.getMessage());
             }
         });
