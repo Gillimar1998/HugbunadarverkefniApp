@@ -10,17 +10,18 @@
         android:layout_height="wrap_content"
         android:hint="Recipe Title" />
 
-    <EditText
-        android:id="@+id/username"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:hint="Username" />
 
     <EditText
         android:id="@+id/recipeDescription"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:hint="Description" />
+
+    <EditText
+        android:id="@+id/recipeCategory"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:hint="Category" />
 
     <EditText
         android:id="@+id/cookTime"

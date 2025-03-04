@@ -1,5 +1,8 @@
 package com.example.hugbunadarverkefni.ui;
 
+import static android.content.Context.MODE_PRIVATE;
+
+import android.content.SharedPreferences;
 import android.os.Build;
 import android.os.Bundle;
 import android.util.Log;
@@ -18,6 +21,9 @@ import com.example.hugbunadarverkefni.R;
 import com.example.hugbunadarverkefni.api.RecipeApiService;
 import com.example.hugbunadarverkefni.api.RetrofitClient;
 import com.example.hugbunadarverkefni.model.Recipe;
+
+import java.util.Map;
+
 import retrofit2.Call;
 import retrofit2.Callback;
 import retrofit2.Response;
@@ -55,10 +61,41 @@ public class RecipeViewFragment extends Fragment {
 
         // Like button click event
         likeButton.setOnClickListener(v -> {
+
             likeCount++;
             likesTextView.setText("Likes: " + likeCount);
+
             Toast.makeText(getContext(), "Liked!", Toast.LENGTH_SHORT).show();
+            /*SharedPreferences sharedPreferences = requireActivity().getSharedPreferences("UserPrefs", MODE_PRIVATE);
+            long userId = sharedPreferences.getLong("user_Id", -1);
+
+            RecipeApiService apiService = RetrofitClient.getClient().create(RecipeApiService.class);
+            Call<Map<String, Object>> call = apiService.likeRecipe(recipeId, userId);
+
+            call.enqueue(new Callback<Map<String, Object>>() {
+                @Override
+                public void onResponse(Call<Map<String, Object>> call, Response<Map<String, Object>> response) {
+                    if (response.isSuccessful() && response.body() != null) {
+                        Map<String, Object> responseBody = response.body();
+                        int likeCount = ((Double) responseBody.get("likeCount")).intValue(); // Convert Double to int
+                        likesTextView.setText("Likes: " + likeCount);
+                        Toast.makeText(getContext(), "Liked!", Toast.LENGTH_SHORT).show();
+                    } else {
+                        Toast.makeText(getContext(), "Failed to like recipe", Toast.LENGTH_SHORT).show();
+                    }
+                }
+
+                @Override
+                public void onFailure(Call<Map<String, Object>> call, Throwable t) {
+                    Toast.makeText(getContext(), "Network error: " + t.getMessage(), Toast.LENGTH_SHORT).show();
+                }
+
+
+            });
+
+             */
         });
+
 
         return view;
     }
@@ -91,7 +128,7 @@ public class RecipeViewFragment extends Fragment {
         titleTextView.setText(recipe.getName());
         categoryTextView.setText("Category: " + recipe.getCategory());
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-            cookTimeTextView.setText("Duration: " + recipe.getCooktimeInMinutes() + " min");
+            cookTimeTextView.setText("Duration: " + recipe.getCookTime() + " min");
         }
         descriptionTextView.setText("Description: " + recipe.getDescription());
        // likesTextView.setText("Likes: " + recipe.getLikeCount());
