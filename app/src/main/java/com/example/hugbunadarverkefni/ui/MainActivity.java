@@ -55,17 +55,19 @@ public class MainActivity extends AppCompatActivity {
         // Inflate activity_main.xml (which includes content_main.xml)
         setContentView(R.layout.activity_main);
 
+
         // Find views by ID
         MaterialToolbar toolbar = findViewById(R.id.toolbar);
         setSupportActionBar(toolbar);
 
+        /*
         FloatingActionButton fab = findViewById(R.id.fab);
         fab.setOnClickListener(view ->
                 Snackbar.make(view, "Replace with your own action", Snackbar.LENGTH_LONG)
                         .setAnchorView(R.id.fab)
                         .setAction("Action", null)
                         .show()
-        );
+        );*/
 
         // Setup NavController with the NavHostFragment
         NavController navController = Navigation.findNavController(this, R.id.nav_host_fragment_content_main);

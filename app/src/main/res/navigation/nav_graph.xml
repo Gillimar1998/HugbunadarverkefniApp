@@ -8,21 +8,25 @@
     <fragment
         android:id="@+id/RecipesViewFragment"
         android:name="com.example.hugbunadarverkefni.ui.RecipesViewFragment"
-        android:label="@string/recipes_View_Fragment"
-        tools:layout="@layout/fragment_recipes_view">
-
-        <!-- ✅ Add this action to navigate to RecipeViewFragment -->
+        android:label="RecipesViewFragment">
+        <action
+            android:id="@+id/action_RecipesViewFragment_to_AddRecipeFragment"
+            app:destination="@id/AddRecipeFragment" />
         <action
             android:id="@+id/action_RecipesViewFragment_to_RecipeViewFragment"
             app:destination="@id/RecipeViewFragment" />
     </fragment>
 
-    <!-- ✅ Add RecipeViewFragment -->
+    <fragment
+        android:id="@+id/AddRecipeFragment"
+        android:name="com.example.hugbunadarverkefni.ui.AddRecipeFragment"
+        android:label="AddRecipeFragment" />
+
     <fragment
         android:id="@+id/RecipeViewFragment"
         android:name="com.example.hugbunadarverkefni.ui.RecipeViewFragment"
-        android:label="Recipe Details"
-        tools:layout="@layout/fragment_recipe_view"/>
+        android:label="RecipeViewFragment" />
+
 
     <fragment
         android:id="@+id/FirstFragment"
@@ -45,4 +49,6 @@
             android:id="@+id/action_SecondFragment_to_FirstFragment"
             app:destination="@id/FirstFragment" />
     </fragment>
+
+
 </navigation>
