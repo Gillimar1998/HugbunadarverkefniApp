@@ -85,9 +85,9 @@
 
                 <ImageButton
                     android:id="@+id/btnLike"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:src="@drawable/ic_like"
+                    android:layout_width="32dp"
+                    android:layout_height="32dp"
+                    android:src="@drawable/ic_favorite_border"
                     android:background="?attr/selectableItemBackgroundBorderless"
                     android:contentDescription="Like Button"/>
             </LinearLayout>
@@ -117,6 +117,15 @@
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:orientation="vertical"/>
+
+            <Button
+                android:id="@+id/btnDeleteRecipe"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Delete Recipe"
+                android:layout_marginTop="16dp"
+                android:visibility="gone"/>
+
         </LinearLayout>
 
     </ScrollView>

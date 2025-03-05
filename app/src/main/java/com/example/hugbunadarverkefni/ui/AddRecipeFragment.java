@@ -61,7 +61,6 @@ public class AddRecipeFragment extends Fragment {
         // Retrieve user ID from SharedPreferences
         SharedPreferences sharedPreferences = requireActivity().getSharedPreferences("UserPrefs", MODE_PRIVATE);
         long userId = sharedPreferences.getLong("user_Id", -1);  // Default to -1 if not found
-        Log.d("LoginDebug", "User ID saved: " + userId);  // Log the user ID to check if it's saved properly
 
 
         if (userId == -1) {
@@ -83,15 +82,27 @@ public class AddRecipeFragment extends Fragment {
                     if (loggedInUser != null) {
                         String title = binding.recipeTitle.getText().toString().trim();
                         String description = binding.recipeDescription.getText().toString().trim();
-                        String cooktime = "PT" + binding.cookTime.getText().toString() + "M"; // Convert to PT format
+                        String category = binding.recipeCategory.getText().toString().trim(); // Ensure category field exists
+                        Boolean privatePost = Boolean.FALSE;
+                        String cookTimeStr = binding.cookTime.getText().toString().trim();
+                        int cookTime = 0;
 
-                        if (title.isEmpty() || description.isEmpty()) {
+                        // Validate required fields
+                        if (title.isEmpty() || description.isEmpty() || category.isEmpty() || cookTimeStr.isEmpty()) {
                             Toast.makeText(getContext(), "Please fill all fields", Toast.LENGTH_SHORT).show();
                             return;
                         }
 
-                        // Create the new Recipe with the full User object
-                        Recipe newRecipe = new Recipe(title, loggedInUser, description, cooktime);
+                        // Validate cook time input
+                        try {
+                            cookTime = Integer.parseInt(cookTimeStr);
+                        } catch (NumberFormatException e) {
+                            Toast.makeText(getContext(), "Cook time must be a number", Toast.LENGTH_SHORT).show();
+                            return;
+                        }
+
+                        // Create the new Recipe
+                        Recipe newRecipe = new Recipe(title, userId, description, category, cookTime, privatePost);
 
                         // Make API call to add the recipe
                         RecipeApiService apiService = RetrofitClient.getClient().create(RecipeApiService.class);
@@ -117,7 +128,6 @@ public class AddRecipeFragment extends Fragment {
                         Toast.makeText(getContext(), "User data is null", Toast.LENGTH_SHORT).show();
                     }
                 } else {
-                    Log.e("LoginDebug", "Failed to fetch user. Response code: " + response.code());
                     Toast.makeText(getContext(), "Failed to fetch user", Toast.LENGTH_SHORT).show();
                 }
             }
