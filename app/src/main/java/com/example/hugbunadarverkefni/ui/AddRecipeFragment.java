@@ -83,7 +83,7 @@ public class AddRecipeFragment extends Fragment {
                     if (loggedInUser != null) {
                         String title = binding.recipeTitle.getText().toString().trim();
                         String description = binding.recipeDescription.getText().toString().trim();
-                        String cooktime = "PT" + binding.cookTime.getText().toString() + "M"; // Convert to PT format
+                        int cooktime = Integer.parseInt("PT" + binding.cookTime.getText().toString() + "M"); // Convert to PT format
 
                         if (title.isEmpty() || description.isEmpty()) {
                             Toast.makeText(getContext(), "Please fill all fields", Toast.LENGTH_SHORT).show();
