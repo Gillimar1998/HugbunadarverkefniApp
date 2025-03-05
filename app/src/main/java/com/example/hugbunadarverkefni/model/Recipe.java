@@ -1,5 +1,6 @@
 package com.example.hugbunadarverkefni.model;
 
+
 import android.os.Build;
 import androidx.annotation.RequiresApi;
 import java.io.Serializable;
@@ -19,28 +20,76 @@ public class Recipe implements Serializable { // Implements Serializable for pas
     private int likeCount; // Added like count field
     private List<Comment> comments; // Added comments list
 
-    private final User user; // Kept as final
 
-    public Recipe(String name, User user, String category, int cookTime) {
+
+    // Constructor for creating new recipes (without ID & creationDate)
+    public Recipe(String name, User user, String description, String category, int cookTime, boolean privatePost) {
         this.name = name;
         this.user = user;
+        this.description = description;
         this.category = category;
         this.cookTime = cookTime;
-        this.creationDate = new Date();
+        this.privatePost = privatePost;
+        this.likedUserIDs = List.of(); // Initialize empty
+        this.likeCount = 0;
     }
+
+    // Constructor for receiving recipes from the backend (full version)
+    public Recipe(Long id, String name, User user, String description, String category, int cookTime, String creationDate, boolean privatePost, List<Long> likedUserIDs, int likeCount) {
+        this.id = id;
+        this.name = name;
+        this.user = user;
+        this.description = description;
+        this.category = category;
+        this.cookTime = cookTime;
+        this.creationDate = creationDate;
+        this.privatePost = privatePost;
+        this.likedUserIDs = likedUserIDs;
+        this.likeCount = likeCount;
+    }
+
 
     // Getters
     public Long getId() { return id; }
+    public void setId(Long id) { this.id = id; }
+
     public String getName() { return name; }
-    public String getCategory() { return category; }
+    public void setName(String name) { this.name = name; }
+  
     public String getDescription() { return description; }
-    public Image getImage() { return image; } // Getter for image
+    public void setDescription(String description) { this.description = description; }
+
+    public String getCategory() { return category; }
+    public void setCategory(String category) { this.category = category; }
+  
     public int getCookTime() { return cookTime; }
-    public Date getCreationDate() { return creationDate; }
-    public boolean isPrivatePost() { return privatePost; }
+    public void setCookTime(int cookTime) { this.cookTime = cookTime; }
+  
+    public String getCreationDate() { return creationDate; }
+    public void setCreationDate(String creationDate) { this.creationDate = creationDate; }
+  
+     public boolean isPrivatePost() { return privatePost; }
+    public void setPrivatePost(boolean privatePost) { this.privatePost = privatePost; }
+
     public List<Long> getLikedUserIDs() { return likedUserIDs; }
+    public void setLikedUserIDs(List<Long> likedUserIDs) { this.likedUserIDs = likedUserIDs; }
+    
     public int getLikeCount() { return likeCount; }
+    public void setLikeCount(int likeCount) { this.likeCount = likeCount; }
+  
     public List<Comment> getComments() { return comments; }
+    public void setComments(List<Comment> comments) { this.comments = comments; }
+    
+    public User getUser() { return user; }
+    public void setUser(User user) { this.user = user; }
+
+    public long getUserId(){ return userId; }
+    public void setUserId(long userId){this.userId = userId; }
+    
+    public Image getImage() { return image; }
+    public void setImage(Image image) { this.image = image; }
+
+   
 
 }
 
