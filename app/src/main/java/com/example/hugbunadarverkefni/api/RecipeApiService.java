@@ -29,5 +29,8 @@ public interface RecipeApiService {
     @DELETE("recipes/{id}")
     Call<Void> deleteRecipe(@Path("id") long recipeId);
 
+    @GET("/recipes/search")
+    Call<List<Recipe>> searchRecipes(@Query("name") String name);
+
 
 }
