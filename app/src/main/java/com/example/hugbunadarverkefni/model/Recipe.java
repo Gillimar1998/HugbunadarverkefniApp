@@ -10,6 +10,7 @@ import java.util.List;
 public class Recipe implements Serializable { // Implements Serializable for passing data
     private Long id;
     private String name;
+    private User user;
     private String category;
     private String description;
     private Image image; // Added image field
@@ -17,6 +18,7 @@ public class Recipe implements Serializable { // Implements Serializable for pas
     private Date creationDate;
     private boolean privatePost;
     private List<Long> likedUserIDs;
+    private Long userId;
     private int likeCount; // Added like count field
     private List<Comment> comments; // Added comments list
 
@@ -34,8 +36,19 @@ public class Recipe implements Serializable { // Implements Serializable for pas
         this.likeCount = 0;
     }
 
+    public Recipe(String name, Long userId, String description, String category, int cookTime, boolean privatePost) {
+        this.name = name;
+        this.user = getUser();
+        this.description = description;
+        this.category = category;
+        this.cookTime = cookTime;
+        this.privatePost = privatePost;
+        this.likedUserIDs = List.of(); // Initialize empty
+        this.likeCount = 0;
+    }
+
     // Constructor for receiving recipes from the backend (full version)
-    public Recipe(Long id, String name, User user, String description, String category, int cookTime, String creationDate, boolean privatePost, List<Long> likedUserIDs, int likeCount) {
+    public Recipe(Long id, String name, User user, String description, String category, int cookTime, Date creationDate, boolean privatePost, List<Long> likedUserIDs, int likeCount) {
         this.id = id;
         this.name = name;
         this.user = user;
@@ -65,8 +78,8 @@ public class Recipe implements Serializable { // Implements Serializable for pas
     public int getCookTime() { return cookTime; }
     public void setCookTime(int cookTime) { this.cookTime = cookTime; }
   
-    public String getCreationDate() { return creationDate; }
-    public void setCreationDate(String creationDate) { this.creationDate = creationDate; }
+    public Date getCreationDate() { return creationDate; }
+    public void setCreationDate(Date creationDate) { this.creationDate = creationDate; }
   
      public boolean isPrivatePost() { return privatePost; }
     public void setPrivatePost(boolean privatePost) { this.privatePost = privatePost; }
