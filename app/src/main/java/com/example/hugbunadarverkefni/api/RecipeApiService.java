@@ -7,6 +7,7 @@ import java.util.Map;
 
 import retrofit2.Call;
 import retrofit2.http.Body;
+import retrofit2.http.DELETE;
 import retrofit2.http.GET;
 import retrofit2.http.POST;
 import retrofit2.http.Path;
@@ -24,6 +25,9 @@ public interface RecipeApiService {
 
     @POST("/recipes/{id}/like")
     Call<Map<String, Object>> likeRecipe(@Path("id") long recipeId, @Query("userId") long userId);
+
+    @DELETE("recipes/{id}")
+    Call<Void> deleteRecipe(@Path("id") long recipeId);
 
 
 }

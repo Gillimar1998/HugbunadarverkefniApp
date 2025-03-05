@@ -25,7 +25,11 @@
     <fragment
         android:id="@+id/RecipeViewFragment"
         android:name="com.example.hugbunadarverkefni.ui.RecipeViewFragment"
-        android:label="RecipeViewFragment" />
+        android:label="RecipeViewFragment">
+        <action
+            android:id="@+id/action_recipeViewFragment_to_recipesViewFragment"
+            app:destination="@id/RecipesViewFragment"/>
+    </fragment>
 
 
     <fragment
