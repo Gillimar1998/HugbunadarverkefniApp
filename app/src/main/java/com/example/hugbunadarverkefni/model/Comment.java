@@ -1,19 +1,22 @@
 package com.example.hugbunadarverkefni.model;
 
-public class Comment {
+import java.io.Serializable;
+
+public class Comment implements Serializable { // Implements Serializable
     private Long id;
     private String content;
     private User user;
-    private Recipe recipe;
+    private Image image; // ✅ Added image field
 
     // Default Constructor
     public Comment() {}
 
     // Constructor
-    public Comment(String content, User user, Recipe recipe) {
+    public Comment(Long id, String content, User user, Image image) {
+        this.id = id;
         this.content = content;
         this.user = user;
-        this.recipe = recipe;
+        this.image = image;
     }
 
     // Getters and Setters
@@ -24,6 +27,6 @@ public class Comment {
     public User getUser() { return user; }
     public void setUser(User user) { this.user = user; }
 
-    public Recipe getRecipe() { return recipe; }
-    public void setRecipe(Recipe recipe) { this.recipe = recipe; }
+    public Image getImage() { return image; } // ✅ Getter for image
+    public void setImage(Image image) { this.image = image; }
 }
