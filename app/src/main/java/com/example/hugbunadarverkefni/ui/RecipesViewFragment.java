@@ -9,6 +9,7 @@ import android.widget.Button;
 import android.widget.EditText;
 import androidx.annotation.NonNull;
 import androidx.fragment.app.Fragment;
+import androidx.navigation.fragment.NavHostFragment;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import com.example.hugbunadarverkefni.R;
 import com.example.hugbunadarverkefni.adapter.RecipeAdapter;
@@ -41,7 +42,7 @@ public class RecipesViewFragment extends Fragment {
         super.onViewCreated(view, savedInstanceState);
 
         // Setup RecyclerView
-        recipeAdapter = new RecipeAdapter(getContext(), recipeList, recipe -> Log.d("RecipeClick", "Clicked Recipe: " + recipe.getName()));
+        recipeAdapter = new RecipeAdapter(getContext(), recipeList, this::openRecipeDetails);
         binding.recyclerView.setLayoutManager(new LinearLayoutManager(getContext()));
         binding.recyclerView.setAdapter(recipeAdapter);
 
@@ -112,6 +113,16 @@ public class RecipesViewFragment extends Fragment {
                 recipeAdapter.notifyDataSetChanged();
             });
         }
+    }
+
+    private void openRecipeDetails(Recipe recipe) {
+        Log.d("RecipeClick", "Clicked on Recipe: " + recipe.getName());
+
+        Bundle bundle = new Bundle();
+        bundle.putLong("recipeId", recipe.getId());
+
+        NavHostFragment.findNavController(this)
+                .navigate(R.id.action_RecipesViewFragment_to_RecipeViewFragment, bundle);
     }
 
     @Override
