@@ -96,7 +96,7 @@ public class RecipeViewFragment extends Fragment {
                         int likeCount = ((Double) responseBody.get("likeCount")).intValue();
 
                         // Get the list of users who liked this post
-                        List<Double> likedUserIds = (List<Double>) responseBody.get("likedUserIds");
+                        List<Double> likedUserIds = (List<Double>) responseBody.get("likedUserIDs");
                         boolean isLiked = likedUserIds.contains((double) userId); // Check if the user is in the list
 
                         // Update UI

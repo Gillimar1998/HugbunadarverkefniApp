@@ -3,6 +3,8 @@ package com.example.hugbunadarverkefni.model;
 
 import android.os.Build;
 import androidx.annotation.RequiresApi;
+
+import java.io.File;
 import java.io.Serializable;
 import java.util.Date;
 import java.util.List;
@@ -13,7 +15,8 @@ public class Recipe implements Serializable { // Implements Serializable for pas
     private User user;
     private String category;
     private String description;
-    private Image image; // Added image field
+    private Image image;
+    private File file;// Added image field
     private int cookTime; // Changed from String to int to avoid parsing issues
     private Date creationDate;
     private boolean privatePost;
@@ -36,15 +39,16 @@ public class Recipe implements Serializable { // Implements Serializable for pas
         this.likeCount = 0;
     }
 
-    public Recipe(String name, Long userId, String description, String category, int cookTime, boolean privatePost) {
+    public Recipe(String name, Long userId, String description, String category, int cookTime, boolean privatePost, File imageFile) {
         this.name = name;
-        this.user = getUser();
+        this.userId = userId;
         this.description = description;
         this.category = category;
         this.cookTime = cookTime;
         this.privatePost = privatePost;
         this.likedUserIDs = List.of(); // Initialize empty
         this.likeCount = 0;
+        this.file = imageFile;
     }
 
     // Constructor for receiving recipes from the backend (full version)
