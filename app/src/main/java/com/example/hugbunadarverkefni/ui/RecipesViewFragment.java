@@ -7,6 +7,7 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.widget.Button;
 import android.widget.EditText;
+import android.widget.LinearLayout;
 import androidx.annotation.NonNull;
 import androidx.fragment.app.Fragment;
 import androidx.navigation.fragment.NavHostFragment;
@@ -18,7 +19,9 @@ import com.example.hugbunadarverkefni.api.RetrofitClient;
 import com.example.hugbunadarverkefni.databinding.FragmentRecipesViewBinding;
 import com.example.hugbunadarverkefni.model.Recipe;
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 import retrofit2.Call;
 import retrofit2.Callback;
 import retrofit2.Response;
@@ -28,8 +31,10 @@ public class RecipesViewFragment extends Fragment {
     private RecipeAdapter recipeAdapter;
     private List<Recipe> recipeList = new ArrayList<>();
     private List<Recipe> fullRecipeList = new ArrayList<>(); // Stores all recipes
+    private Set<String> uniqueCategories = new HashSet<>(); // Stores unique categories
     private EditText searchInput;
     private Button searchButton;
+    private LinearLayout filterLayout; // Layout for dynamic category buttons
 
     @Override
     public View onCreateView(@NonNull LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState) {
@@ -46,9 +51,10 @@ public class RecipesViewFragment extends Fragment {
         binding.recyclerView.setLayoutManager(new LinearLayoutManager(getContext()));
         binding.recyclerView.setAdapter(recipeAdapter);
 
-        // Initialize search input and button
+        // Initialize search input, button, and filter layout
         searchInput = binding.getRoot().findViewById(R.id.searchInput);
         searchButton = binding.getRoot().findViewById(R.id.searchButton);
+        filterLayout = binding.getRoot().findViewById(R.id.filterLayout);
 
         searchButton.setOnClickListener(v -> {
             String query = searchInput.getText().toString().trim().toLowerCase();
@@ -78,6 +84,10 @@ public class RecipesViewFragment extends Fragment {
 
                     fullRecipeList.clear();
                     fullRecipeList.addAll(response.body());
+
+                    // Extract unique categories
+                    extractCategories(fullRecipeList);
+
                     updateRecyclerView(fullRecipeList);
                 } else {
                     Log.e("RecipeFetch", "Failed to fetch recipes: " + response.errorBody());
@@ -89,6 +99,50 @@ public class RecipesViewFragment extends Fragment {
                 Log.e("RecipeFetch", "Network Failure: " + t.getMessage());
             }
         });
+    }
+
+    private void extractCategories(List<Recipe> recipes) {
+        uniqueCategories.clear();
+        for (Recipe recipe : recipes) {
+            if (recipe.getCategory() != null) {
+                uniqueCategories.add(recipe.getCategory()); // Add unique category
+            }
+        }
+        createFilterButtons();
+    }
+
+    private void createFilterButtons() {
+        getActivity().runOnUiThread(() -> {
+            filterLayout.removeAllViews(); // Clear previous buttons
+
+            // Add "All" button to reset filter
+            Button allButton = new Button(getContext());
+            allButton.setText("All");
+            allButton.setOnClickListener(v -> updateRecyclerView(fullRecipeList));
+            filterLayout.addView(allButton);
+
+            // Create buttons for each unique category
+            for (String category : uniqueCategories) {
+                Button categoryButton = new Button(getContext());
+                categoryButton.setText(category);
+                categoryButton.setOnClickListener(v -> filterByCategory(category));
+                filterLayout.addView(categoryButton);
+            }
+        });
+    }
+
+    private void filterByCategory(String category) {
+        Log.d("FilterDebug", "Filtering by category: " + category);
+        List<Recipe> filteredList = new ArrayList<>();
+
+        for (Recipe recipe : fullRecipeList) {
+            if (recipe.getCategory().equalsIgnoreCase(category)) {
+                filteredList.add(recipe);
+            }
+        }
+
+        Log.d("FilterDebug", "Filtered results: " + filteredList.size() + " recipes found for " + category);
+        updateRecyclerView(filteredList);
     }
 
     private void filterLocalRecipes(String query) {

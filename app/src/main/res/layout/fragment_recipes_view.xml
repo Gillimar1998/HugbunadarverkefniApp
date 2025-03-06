@@ -19,7 +19,6 @@ android:layout_height="match_parent">
             android:layout_weight="1"
             android:hint="Search Recipes"
             android:padding="8dp"
-            android:background="@android:drawable/editbox_background"
             android:textSize="16sp"/>
 
         <Button
@@ -29,13 +28,28 @@ android:layout_height="match_parent">
             android:text="Search"/>
     </LinearLayout>
 
-<!-- RecyclerView for displaying recipes -->
-<androidx.recyclerview.widget.RecyclerView
-    android:id="@+id/recyclerView"
-    android:layout_width="match_parent"
-    android:layout_height="0dp"
-    android:layout_below="@id/searchLayout"
-    android:layout_above="@id/fabAddRecipe"/>
+    <!-- Dynamic Category Buttons -->
+    <HorizontalScrollView
+        android:id="@+id/categoryScrollView"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_below="@id/searchLayout"
+        android:padding="8dp">
+
+        <LinearLayout
+            android:id="@+id/filterLayout"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"/>
+    </HorizontalScrollView>
+
+    <!-- RecyclerView for displaying recipes -->
+    <androidx.recyclerview.widget.RecyclerView
+        android:id="@+id/recyclerView"
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:layout_below="@id/categoryScrollView"
+        android:layout_above="@id/fabAddRecipe"/>
 
 <!-- Floating Action Button for adding a new recipe -->
 <androidx.appcompat.widget.AppCompatImageButton
