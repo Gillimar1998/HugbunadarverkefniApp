@@ -67,6 +67,12 @@ public class RecipesViewFragment extends Fragment {
             }
         });
 
+        // Floating Action Button click listener
+        binding.getRoot().findViewById(R.id.fabAddRecipe).setOnClickListener(v -> {
+            NavHostFragment.findNavController(this)
+                    .navigate(R.id.action_RecipesViewFragment_to_AddRecipeFragment);
+        });
+
         // Fetch all recipes initially
         fetchRecipes();
     }
