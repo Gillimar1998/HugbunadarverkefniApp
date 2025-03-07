@@ -22,6 +22,8 @@ public class User {
         this.admin = admin;
     }
 
+
+
     // Getters and Setters
     public Long getId() { return id; }
     public String getUsername() { return username; }
