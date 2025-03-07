@@ -31,6 +31,15 @@
             app:destination="@id/RecipesViewFragment"/>
     </fragment>
 
+    <fragment
+        android:id="@+id/AccountSettingsFragment"
+        android:name="com.example.hugbunadarverkefni.ui.AccountSettingsFragment"
+        android:label="AccountSettingsFragment" />
+
+    <action
+        android:id="@+id/action_RecipesViewFragment_to_AccountSettingsFragment"
+        app:destination="@id/AccountSettingsFragment" />
+
 
     <fragment
         android:id="@+id/FirstFragment"
