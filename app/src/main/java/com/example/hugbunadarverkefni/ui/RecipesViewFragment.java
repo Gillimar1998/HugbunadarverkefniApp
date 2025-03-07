@@ -6,6 +6,7 @@ import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.Button;
+import android.widget.CheckBox;
 import android.widget.EditText;
 import android.widget.LinearLayout;
 import androidx.annotation.NonNull;
@@ -32,9 +33,10 @@ public class RecipesViewFragment extends Fragment {
     private List<Recipe> recipeList = new ArrayList<>();
     private List<Recipe> fullRecipeList = new ArrayList<>(); // Stores all recipes
     private Set<String> uniqueCategories = new HashSet<>(); // Stores unique categories
+    private Set<String> selectedCategories = new HashSet<>(); // Tracks selected filters
     private EditText searchInput;
-    private Button searchButton;
-    private LinearLayout filterLayout; // Layout for dynamic category buttons
+    private Button searchButton, clearFiltersButton; // Clear filters button
+    private LinearLayout filterLayout; // Layout for category checkboxes
 
     @Override
     public View onCreateView(@NonNull LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState) {
@@ -56,21 +58,17 @@ public class RecipesViewFragment extends Fragment {
         searchButton = binding.getRoot().findViewById(R.id.searchButton);
         filterLayout = binding.getRoot().findViewById(R.id.filterLayout);
 
+        // Create "Clear Filters" button
+        clearFiltersButton = new Button(getContext());
+        clearFiltersButton.setText("Reset filters");
+        clearFiltersButton.setOnClickListener(v -> clearFilters());
+        filterLayout.addView(clearFiltersButton); // Add to layout
+
+        // Search button functionality
         searchButton.setOnClickListener(v -> {
             String query = searchInput.getText().toString().trim().toLowerCase();
             Log.d("SearchDebug", "Search button clicked with query: " + query);
-
-            if (!query.isEmpty()) {
-                filterLocalRecipes(query);
-            } else {
-                updateRecyclerView(fullRecipeList); // Show all recipes if search is cleared
-            }
-        });
-
-        // Floating Action Button click listener
-        binding.getRoot().findViewById(R.id.fabAddRecipe).setOnClickListener(v -> {
-            NavHostFragment.findNavController(this)
-                    .navigate(R.id.action_RecipesViewFragment_to_AddRecipeFragment);
+            filterLocalRecipes(query);
         });
 
         // Fetch all recipes initially
@@ -114,70 +112,71 @@ public class RecipesViewFragment extends Fragment {
                 uniqueCategories.add(recipe.getCategory()); // Add unique category
             }
         }
-        createFilterButtons();
+        createFilterCheckboxes();
     }
 
-    private void createFilterButtons() {
+    private void createFilterCheckboxes() {
         getActivity().runOnUiThread(() -> {
             filterLayout.removeAllViews(); // Clear previous buttons
+            filterLayout.addView(clearFiltersButton); // Ensure "All" button is at the top
 
-            // Add "All" button to reset filter
-            Button allButton = new Button(getContext());
-            allButton.setText("All");
-            allButton.setOnClickListener(v -> updateRecyclerView(fullRecipeList));
-            filterLayout.addView(allButton);
-
-            // Create buttons for each unique category
+            // Create checkboxes for each category
             for (String category : uniqueCategories) {
-                Button categoryButton = new Button(getContext());
-                categoryButton.setText(category);
-                categoryButton.setOnClickListener(v -> filterByCategory(category));
-                filterLayout.addView(categoryButton);
+                CheckBox categoryCheckBox = new CheckBox(getContext());
+                categoryCheckBox.setText(category);
+                categoryCheckBox.setOnClickListener(v -> toggleCategoryFilter(category, categoryCheckBox.isChecked()));
+                filterLayout.addView(categoryCheckBox);
             }
         });
     }
 
-    private void filterByCategory(String category) {
-        Log.d("FilterDebug", "Filtering by category: " + category);
-        List<Recipe> filteredList = new ArrayList<>();
+    private void clearFilters() {
+        selectedCategories.clear();
+        searchInput.setText(""); // Reset search bar
+        filterLayout.removeAllViews();
+        filterLayout.addView(clearFiltersButton);
+        createFilterCheckboxes(); // Recreate checkboxes
+        updateRecyclerView(fullRecipeList); // Reset recipe list
+    }
 
-        for (Recipe recipe : fullRecipeList) {
-            if (recipe.getCategory().equalsIgnoreCase(category)) {
-                filteredList.add(recipe);
-            }
+    private void toggleCategoryFilter(String category, boolean isChecked) {
+        if (isChecked) {
+            selectedCategories.add(category);
+        } else {
+            selectedCategories.remove(category);
         }
+        applyFilters();
+    }
 
-        Log.d("FilterDebug", "Filtered results: " + filteredList.size() + " recipes found for " + category);
-        updateRecyclerView(filteredList);
+    private void applyFilters() {
+        String query = searchInput.getText().toString().trim().toLowerCase();
+        filterLocalRecipes(query);
     }
 
     private void filterLocalRecipes(String query) {
-        Log.d("SearchDebug", "Filtering recipes locally for query: " + query);
         List<Recipe> filteredList = new ArrayList<>();
 
         for (Recipe recipe : fullRecipeList) {
-            if (recipe.getName().toLowerCase().contains(query) || (recipe.getDescription() != null && recipe.getDescription().toLowerCase().contains(query))) {
+            boolean matchesSearch = query.isEmpty() || recipe.getName().toLowerCase().contains(query);
+            boolean matchesCategory = selectedCategories.isEmpty() || selectedCategories.contains(recipe.getCategory());
+
+            if (matchesSearch && matchesCategory) {
                 filteredList.add(recipe);
             }
         }
 
-        Log.d("SearchDebug", "Filtered results: " + filteredList.size() + " recipes match the search.");
         updateRecyclerView(filteredList);
     }
 
     private void updateRecyclerView(List<Recipe> recipes) {
-        if (getActivity() != null) {
-            getActivity().runOnUiThread(() -> {
-                recipeList.clear();
-                recipeList.addAll(recipes);
-                recipeAdapter.notifyDataSetChanged();
-            });
-        }
+        getActivity().runOnUiThread(() -> {
+            recipeList.clear();
+            recipeList.addAll(recipes);
+            recipeAdapter.notifyDataSetChanged();
+        });
     }
 
     private void openRecipeDetails(Recipe recipe) {
-        Log.d("RecipeClick", "Clicked on Recipe: " + recipe.getName());
-
         Bundle bundle = new Bundle();
         bundle.putLong("recipeId", recipe.getId());
 

@@ -29,7 +29,7 @@ android:layout_height="match_parent">
     </LinearLayout>
 
     <!-- Dynamic Category Buttons -->
-    <HorizontalScrollView
+    <ScrollView
         android:id="@+id/categoryScrollView"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
@@ -41,7 +41,7 @@ android:layout_height="match_parent">
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:orientation="horizontal"/>
-    </HorizontalScrollView>
+    </ScrollView>
 
     <!-- RecyclerView for displaying recipes -->
     <androidx.recyclerview.widget.RecyclerView
