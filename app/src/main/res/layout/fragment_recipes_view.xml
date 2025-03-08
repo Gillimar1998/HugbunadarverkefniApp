@@ -6,6 +6,7 @@ android:layout_height="match_parent">
     <!-- Search Bar (EditText and Button) -->
     <LinearLayout
         android:id="@+id/searchLayout"
+        android:layout_marginTop="8dp"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:orientation="horizontal"
@@ -28,12 +29,37 @@ android:layout_height="match_parent">
             android:text="Search"/>
     </LinearLayout>
 
+
+    <!-- Sorting Label -->
+    <TextView
+        android:id="@+id/sortLabel"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_below="@id/searchLayout"
+        android:layout_marginStart="12dp"
+        android:layout_marginTop="4dp"
+        android:text="Sorting by: A to Z"
+        android:textSize="16sp"
+        android:textStyle="bold"/>
+
+    <!-- Sorting Dropdown -->
+    <Spinner
+        android:id="@+id/sortSpinner"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_below="@id/sortLabel"
+        android:layout_marginTop="4dp"
+        android:layout_marginStart="10dp"
+        android:layout_marginEnd="10dp"
+        android:background="@android:drawable/btn_dropdown"
+        android:padding="8dp"/>
+
     <!-- Dynamic Category Buttons -->
     <ScrollView
         android:id="@+id/categoryScrollView"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:layout_below="@id/searchLayout"
+        android:layout_below="@id/sortSpinner"
         android:padding="8dp">
 
         <LinearLayout
@@ -60,6 +86,7 @@ android:layout_height="match_parent">
     android:src="@android:drawable/ic_input_add"
     android:contentDescription="@string/add_recipe" />
 
+    <!-- Account settings Button -->
     <Button
         android:id="@+id/btnAccountSettings"
         android:layout_width="wrap_content"
