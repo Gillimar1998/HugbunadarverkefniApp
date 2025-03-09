@@ -77,14 +77,16 @@ android:layout_height="match_parent">
         android:layout_below="@id/categoryScrollView"
         android:layout_above="@id/fabAddRecipe"/>
 
-<!-- Floating Action Button for adding a new recipe -->
-<androidx.appcompat.widget.AppCompatImageButton
-    android:id="@+id/fabAddRecipe"
-    android:layout_width="wrap_content"
-    android:layout_height="wrap_content"
-    android:layout_alignParentBottom="true"
-    android:src="@android:drawable/ic_input_add"
-    android:contentDescription="@string/add_recipe" />
+    <!-- Floating Action Button for adding a new recipe -->
+    <com.google.android.material.floatingactionbutton.FloatingActionButton
+        android:id="@+id/fabAddRecipe"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_alignParentBottom="true"
+        android:layout_margin="16dp"
+        android:src="@android:drawable/ic_input_add"
+        android:contentDescription="@string/add_recipe"/>
+
 
     <!-- Account settings Button -->
     <Button
