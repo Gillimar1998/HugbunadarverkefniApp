@@ -5,10 +5,7 @@ import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
-import android.widget.Button;
-import android.widget.CheckBox;
-import android.widget.EditText;
-import android.widget.LinearLayout;
+import android.widget.*;
 import androidx.annotation.NonNull;
 import androidx.fragment.app.Fragment;
 import androidx.navigation.fragment.NavHostFragment;
@@ -19,10 +16,7 @@ import com.example.hugbunadarverkefni.api.RecipeApiService;
 import com.example.hugbunadarverkefni.api.RetrofitClient;
 import com.example.hugbunadarverkefni.databinding.FragmentRecipesViewBinding;
 import com.example.hugbunadarverkefni.model.Recipe;
-import java.util.ArrayList;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Set;
+import java.util.*;
 import retrofit2.Call;
 import retrofit2.Callback;
 import retrofit2.Response;
@@ -37,6 +31,8 @@ public class RecipesViewFragment extends Fragment {
     private EditText searchInput;
     private Button searchButton, clearFiltersButton; // Clear filters button
     private LinearLayout filterLayout; // Layout for category checkboxes
+    private Spinner sortSpinner; // spinner for sort methods
+    private String selectedSortOption = "A to Z";
 
     @Override
     public View onCreateView(@NonNull LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState) {
@@ -53,10 +49,31 @@ public class RecipesViewFragment extends Fragment {
         binding.recyclerView.setLayoutManager(new LinearLayoutManager(getContext()));
         binding.recyclerView.setAdapter(recipeAdapter);
 
-        // Initialize search input, button, and filter layout
+        // Initialize UI elements
         searchInput = binding.getRoot().findViewById(R.id.searchInput);
         searchButton = binding.getRoot().findViewById(R.id.searchButton);
         filterLayout = binding.getRoot().findViewById(R.id.filterLayout);
+        TextView sortLabel = view.findViewById(R.id.sortLabel);
+        sortSpinner = view.findViewById(R.id.sortSpinner);
+
+        // Sorting options:
+        ArrayAdapter<CharSequence> adapter = ArrayAdapter.createFromResource(
+                getContext(), R.array.sort_options, android.R.layout.simple_spinner_item
+        );
+        adapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
+        sortSpinner.setAdapter(adapter);
+
+        sortSpinner.setOnItemSelectedListener(new AdapterView.OnItemSelectedListener() {
+            @Override
+            public void onItemSelected(AdapterView<?> parent, View view, int position, long id) {
+                selectedSortOption = parent.getItemAtPosition(position).toString();
+                sortLabel.setText("Sorting by: " + selectedSortOption); // Update label dynamically
+                applyFilters();
+            }
+
+            @Override
+            public void onNothingSelected(AdapterView<?> parent) {}
+        });
 
         // Create "Clear Filters" button
         clearFiltersButton = new Button(getContext());
@@ -68,7 +85,7 @@ public class RecipesViewFragment extends Fragment {
         searchButton.setOnClickListener(v -> {
             String query = searchInput.getText().toString().trim().toLowerCase();
             Log.d("SearchDebug", "Search button clicked with query: " + query);
-            filterLocalRecipes(query);
+            filterAndSortRecipes(query);
         });
 
         Button accountSettingsButton = view.findViewById(R.id.btnAccountSettings);
@@ -98,7 +115,8 @@ public class RecipesViewFragment extends Fragment {
                     // Extract unique categories
                     extractCategories(fullRecipeList);
 
-                    updateRecyclerView(fullRecipeList);
+                    applyFilters();
+
                 } else {
                     Log.e("RecipeFetch", "Failed to fetch recipes: " + response.errorBody());
                 }
@@ -137,13 +155,16 @@ public class RecipesViewFragment extends Fragment {
     }
 
     private void clearFilters() {
-        selectedCategories.clear();
-        searchInput.setText(""); // Reset search bar
+        selectedCategories.clear(); // Clears only category filters
+        searchInput.setText("");
         filterLayout.removeAllViews();
         filterLayout.addView(clearFiltersButton);
-        createFilterCheckboxes(); // Recreate checkboxes
-        updateRecyclerView(fullRecipeList); // Reset recipe list
+        createFilterCheckboxes();
+
+        // Preserve the current sorting order
+        applyFilters();
     }
+
 
     private void toggleCategoryFilter(String category, boolean isChecked) {
         if (isChecked) {
@@ -156,10 +177,10 @@ public class RecipesViewFragment extends Fragment {
 
     private void applyFilters() {
         String query = searchInput.getText().toString().trim().toLowerCase();
-        filterLocalRecipes(query);
+        filterAndSortRecipes(query);
     }
 
-    private void filterLocalRecipes(String query) {
+    private void filterAndSortRecipes(String query) {
         List<Recipe> filteredList = new ArrayList<>();
 
         for (Recipe recipe : fullRecipeList) {
@@ -171,7 +192,30 @@ public class RecipesViewFragment extends Fragment {
             }
         }
 
+        sortRecipes(filteredList);
         updateRecyclerView(filteredList);
+    }
+
+    private void sortRecipes(List<Recipe> recipes){
+        switch(selectedSortOption){
+            case "A to Z":
+                recipes.sort(Comparator.comparing(Recipe::getName));
+                break;
+            case "Newest to Oldest":
+                recipes.sort(Comparator.comparing(Recipe::getCreationDate).reversed());
+                break;
+            case "Oldest to Newest":
+                recipes.sort(Comparator.comparing(Recipe::getCreationDate));
+                break;
+            case "Like Count":
+                recipes.sort(Comparator.comparing(Recipe::getLikeCount).reversed());
+                break;
+            case "Cook Time":
+                recipes.sort(Comparator.comparing(Recipe::getCookTime));
+                break;
+            default:
+                recipes.sort(Comparator.comparing(Recipe::getName));
+        }
     }
 
     private void updateRecyclerView(List<Recipe> recipes) {
