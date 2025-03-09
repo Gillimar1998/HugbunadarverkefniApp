@@ -16,6 +16,8 @@ import com.example.hugbunadarverkefni.api.RecipeApiService;
 import com.example.hugbunadarverkefni.api.RetrofitClient;
 import com.example.hugbunadarverkefni.databinding.FragmentRecipesViewBinding;
 import com.example.hugbunadarverkefni.model.Recipe;
+import com.google.android.material.floatingactionbutton.FloatingActionButton;
+
 import java.util.*;
 import retrofit2.Call;
 import retrofit2.Callback;
@@ -56,6 +58,13 @@ public class RecipesViewFragment extends Fragment {
         TextView sortLabel = view.findViewById(R.id.sortLabel);
         sortSpinner = view.findViewById(R.id.sortSpinner);
 
+        // Floating Action Button for Adding Recipes
+        FloatingActionButton fabAddRecipe = view.findViewById(R.id.fabAddRecipe);
+        fabAddRecipe.setOnClickListener(v ->
+                NavHostFragment.findNavController(this)
+                        .navigate(R.id.action_RecipesViewFragment_to_AddRecipeFragment)
+        );
+
         // Sorting options:
         ArrayAdapter<CharSequence> adapter = ArrayAdapter.createFromResource(
                 getContext(), R.array.sort_options, android.R.layout.simple_spinner_item
@@ -87,6 +96,8 @@ public class RecipesViewFragment extends Fragment {
             Log.d("SearchDebug", "Search button clicked with query: " + query);
             filterAndSortRecipes(query);
         });
+
+
 
         Button accountSettingsButton = view.findViewById(R.id.btnAccountSettings);
         accountSettingsButton.setOnClickListener(v ->
