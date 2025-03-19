@@ -48,6 +48,7 @@ public class AddRecipeFragment extends Fragment {
     private static final int PICK_IMAGE_REQUEST = 1;
     private Uri imageUri;
     private ImageView recipeImagePreview;
+    private boolean private_post = false;
 
     @Override
     public View onCreateView(@NonNull LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState) {
@@ -65,10 +66,20 @@ public class AddRecipeFragment extends Fragment {
         // Set the placeholder image initially
         recipeImagePreview.setImageResource(R.drawable.ic_placeholder);
 
-        // Add an onClickListener to allow the user to pick an image
+        // An onClickListener to allow the user to pick an image
         Button btnSelectImage = view.findViewById(R.id.btnSelectImage);
 
         btnSelectImage.setOnClickListener(v -> openImageChooser());
+
+        binding.switchPrivatePost.setOnCheckedChangeListener((buttonView, isChecked) -> {
+            if (isChecked) {
+                private_post = true;
+                Toast.makeText(getContext(), "Post is private", Toast.LENGTH_SHORT).show();
+            } else {
+                private_post = false;
+                Toast.makeText(getContext(), "Post is not private", Toast.LENGTH_SHORT).show();
+            }
+        });
 
         // Handle Save Button
         binding.btnSubmitRecipe.setOnClickListener(v -> submitRecipe());
@@ -105,7 +116,7 @@ public class AddRecipeFragment extends Fragment {
                     if (loggedInUser != null) {
                         String title = binding.recipeTitle.getText().toString().trim();
                         String description = binding.recipeDescription.getText().toString().trim();
-                        String category = binding.recipeCategory.getText().toString().trim(); // Ensure category field exists
+                        String category = binding.recipeCategory.getText().toString().trim();
                         String cookTimeStr = binding.cookTime.getText().toString().trim();
                         int cookTime = 0;
 
@@ -129,6 +140,7 @@ public class AddRecipeFragment extends Fragment {
                         RequestBody categoryPart = RequestBody.create(MediaType.parse("text/plain"), category);
                         RequestBody cookTimePart = RequestBody.create(MediaType.parse("text/plain"), String.valueOf(cookTime));
                         RequestBody userIdPart = RequestBody.create(MediaType.parse("text/plain"), String.valueOf(userId));
+                        RequestBody privatePart = RequestBody.create(MediaType.parse("text/plain"), String.valueOf(private_post));
 
                         // Handle image if available
                         MultipartBody.Part imagePart = null;
@@ -142,7 +154,7 @@ public class AddRecipeFragment extends Fragment {
 
                         // Make the API call to add the recipe
                         RecipeApiService apiService = RetrofitClient.getClient().create(RecipeApiService.class);
-                        Call<Recipe> callRecipe = apiService.addRecipe(namePart, descriptionPart, categoryPart, cookTimePart, userIdPart, imagePart);
+                        Call<Recipe> callRecipe = apiService.addRecipe(namePart, descriptionPart, categoryPart, cookTimePart, userIdPart, privatePart, imagePart);
 
                         callRecipe.enqueue(new Callback<Recipe>() {
                             @Override

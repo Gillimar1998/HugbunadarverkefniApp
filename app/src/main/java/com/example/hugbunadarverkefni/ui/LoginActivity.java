@@ -80,6 +80,7 @@ public class LoginActivity extends AppCompatActivity {
                     SharedPreferences.Editor editor = sharedPreferences.edit();
                     editor.putString("username", user.getUsername());
                     editor.putLong("user_Id", user.getId());
+                    editor.putBoolean("isAdmin", user.isAdmin());
                     editor.putBoolean("isLoggedIn", true);
                     editor.apply();
 

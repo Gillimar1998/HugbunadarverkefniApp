@@ -38,7 +38,7 @@ import retrofit2.Response;
 
 public class RecipeViewFragment extends Fragment {
 
-    private TextView titleTextView, categoryTextView, cookTimeTextView, descriptionTextView, likesTextView;
+    private TextView titleTextView, categoryTextView, cookTimeTextView, descriptionTextView, likesTextView, recipePrivate;
     private ImageView recipeImageView;
     private LinearLayout commentsContainer;
     private ImageButton likeButton;
@@ -55,11 +55,13 @@ public class RecipeViewFragment extends Fragment {
         categoryTextView = view.findViewById(R.id.recipeCategory);
         cookTimeTextView = view.findViewById(R.id.recipeCookTime);
         descriptionTextView = view.findViewById(R.id.recipeDescription);
+        recipePrivate = view.findViewById(R.id.recipePrivate);
         likesTextView = view.findViewById(R.id.recipeLikes);
         recipeImageView = view.findViewById(R.id.ivRecipeImage); // ImageView for recipe image
         commentsContainer = view.findViewById(R.id.commentsContainer);
         likeButton = view.findViewById(R.id.btnLike);
         btnDeleteRecipe = view.findViewById(R.id.btnDeleteRecipe);
+
 
 
         // Get recipe ID from arguments
@@ -154,6 +156,7 @@ public class RecipeViewFragment extends Fragment {
         cookTimeTextView.setText("Duration: " + recipe.getCookTime() + " min");
         descriptionTextView.setText("Description: " + recipe.getDescription());
         likesTextView.setText("Likes: " + recipe.getLikeCount());
+        recipePrivate.setText("PostPrivate :" + recipe.isPrivatePost());
 
         // Handle ImageView visibility
         if (recipe.getImage() != null && recipe.getImage().getUrl() != null && !recipe.getImage().getUrl().isEmpty()) {
@@ -168,10 +171,17 @@ public class RecipeViewFragment extends Fragment {
         }
         SharedPreferences sharedPreferences = requireActivity().getSharedPreferences("UserPrefs", MODE_PRIVATE);
         long userId = sharedPreferences.getLong("user_Id", -1);
+        boolean isAdmin = sharedPreferences.getBoolean("isAdmin", false);
+
+        if (isAdmin){
+            recipePrivate.setVisibility(View.VISIBLE);
+        } else {
+            recipePrivate.setVisibility(View.INVISIBLE);
+        }
 
         likesTextView.setText("Likes: " + recipe.getLikeCount());
 
-        if (recipe.getUser().getId() == userId) {
+        if (recipe.getUser().getId() == userId || isAdmin) {
             btnDeleteRecipe.setVisibility(View.VISIBLE);
             btnDeleteRecipe.setOnClickListener(v -> showDeleteConfirmation(recipeId));
         }

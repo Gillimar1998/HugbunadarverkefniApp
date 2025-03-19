@@ -1,6 +1,7 @@
 package com.example.hugbunadarverkefni.api;
 
 import com.example.hugbunadarverkefni.model.Recipe;
+import com.example.hugbunadarverkefni.model.User;
 
 import java.util.List;
 import java.util.Map;
@@ -32,6 +33,7 @@ public interface RecipeApiService {
             @Part("category") RequestBody category,
             @Part("cookTime") RequestBody cookTime,
             @Part("userId") RequestBody userId,
+            @Part("privatePost") RequestBody privatePost,
             @Part MultipartBody.Part file
     );
 

@@ -1,5 +1,8 @@
 package com.example.hugbunadarverkefni.ui;
 
+import static android.content.Context.MODE_PRIVATE;
+
+import android.content.SharedPreferences;
 import android.os.Bundle;
 import android.util.Log;
 import android.view.LayoutInflater;
@@ -14,8 +17,10 @@ import com.example.hugbunadarverkefni.R;
 import com.example.hugbunadarverkefni.adapter.RecipeAdapter;
 import com.example.hugbunadarverkefni.api.RecipeApiService;
 import com.example.hugbunadarverkefni.api.RetrofitClient;
+import com.example.hugbunadarverkefni.api.UserApiService;
 import com.example.hugbunadarverkefni.databinding.FragmentRecipesViewBinding;
 import com.example.hugbunadarverkefni.model.Recipe;
+import com.example.hugbunadarverkefni.model.User;
 import com.google.android.material.floatingactionbutton.FloatingActionButton;
 
 import java.util.*;
@@ -114,6 +119,10 @@ public class RecipesViewFragment extends Fragment {
         RecipeApiService apiService = RetrofitClient.getClient().create(RecipeApiService.class);
         Call<List<Recipe>> call = apiService.getRecipes();
 
+        SharedPreferences sharedPreferences = requireActivity().getSharedPreferences("UserPrefs", MODE_PRIVATE);
+        long userId = sharedPreferences.getLong("user_Id", -1);
+        boolean isAdmin = sharedPreferences.getBoolean("isAdmin", false);
+
         call.enqueue(new Callback<List<Recipe>>() {
             @Override
             public void onResponse(Call<List<Recipe>> call, Response<List<Recipe>> response) {
@@ -121,7 +130,12 @@ public class RecipesViewFragment extends Fragment {
                     Log.d("RecipeFetch", "Fetched " + response.body().size() + " recipes");
 
                     fullRecipeList.clear();
-                    fullRecipeList.addAll(response.body());
+
+                    for (Recipe recipe : response.body()) {
+                        if (!recipe.isPrivatePost() || isAdmin || recipe.getUserId() == userId) {
+                            fullRecipeList.add(recipe);
+                        }
+                    }
 
                     // Extract unique categories
                     extractCategories(fullRecipeList);
@@ -192,13 +206,18 @@ public class RecipesViewFragment extends Fragment {
     }
 
     private void filterAndSortRecipes(String query) {
+
+        SharedPreferences sharedPreferences = requireActivity().getSharedPreferences("UserPrefs", MODE_PRIVATE);
+        long userId = sharedPreferences.getLong("user_Id", -1);
+        boolean isAdmin = sharedPreferences.getBoolean("isAdmin", false);
+
         List<Recipe> filteredList = new ArrayList<>();
 
         for (Recipe recipe : fullRecipeList) {
             boolean matchesSearch = query.isEmpty() || recipe.getName().toLowerCase().contains(query);
             boolean matchesCategory = selectedCategories.isEmpty() || selectedCategories.contains(recipe.getCategory());
 
-            if (matchesSearch && matchesCategory) {
+            if (matchesSearch && matchesCategory && (!recipe.isPrivatePost() || isAdmin || recipe.getUserId() == userId)) {
                 filteredList.add(recipe);
             }
         }
