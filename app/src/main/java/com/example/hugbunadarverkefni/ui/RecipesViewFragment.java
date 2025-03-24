@@ -123,6 +123,7 @@ public class RecipesViewFragment extends Fragment {
         long userId = sharedPreferences.getLong("user_Id", -1);
         boolean isAdmin = sharedPreferences.getBoolean("isAdmin", false);
 
+
         call.enqueue(new Callback<List<Recipe>>() {
             @Override
             public void onResponse(Call<List<Recipe>> call, Response<List<Recipe>> response) {

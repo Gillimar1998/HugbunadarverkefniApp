@@ -13,11 +13,20 @@ import android.widget.EditText;
 import android.widget.Toast;
 import androidx.annotation.NonNull;
 import androidx.fragment.app.Fragment;
+import androidx.navigation.fragment.NavHostFragment;
+
 import com.example.hugbunadarverkefni.R;
 import com.example.hugbunadarverkefni.api.UserApiService;
 import com.example.hugbunadarverkefni.api.RecipeApiService;
 import com.example.hugbunadarverkefni.api.RetrofitClient;
+import com.example.hugbunadarverkefni.model.Recipe;
 import com.example.hugbunadarverkefni.model.User;
+
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Objects;
+import java.util.Set;
+
 import okhttp3.RequestBody;
 import retrofit2.Call;
 import retrofit2.Callback;
@@ -27,7 +36,10 @@ import okhttp3.MediaType;
 public class AccountSettingsFragment extends Fragment {
 
     private EditText emailField, usernameField, passwordField;
-    private Button saveButton;
+    private Button saveButton, favorites;
+    private List<Recipe> fullRecipeList = new ArrayList<>();
+
+
 
     @Override
     public View onCreateView(@NonNull LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState) {
@@ -37,6 +49,7 @@ public class AccountSettingsFragment extends Fragment {
         usernameField = view.findViewById(R.id.editUsername);
         passwordField = view.findViewById(R.id.editPassword);
         saveButton = view.findViewById(R.id.btnSave);
+        favorites = view.findViewById(R.id.btnFavorites);
 
         Long userId = getUserIdFromStorage(); // Fetch userId from SharedPreferences or arguments
         if (userId != null) {
@@ -53,9 +66,13 @@ public class AccountSettingsFragment extends Fragment {
             updateUser(userId, newUsername, newEmail, newPassword);
         });
 
+        favorites.setOnClickListener(v -> {
+            NavHostFragment.findNavController(this)
+                    .navigate(R.id.action_AccountSettingsFragment_to_FavoritesViewFragment);
+        });
+
         return view;
     }
-
 
 
     private void updateUser(Long userId, String newUsername, String newEmail, String newPassword) {
@@ -69,27 +86,39 @@ public class AccountSettingsFragment extends Fragment {
                 if (response.isSuccessful() && response.body() != null) {
                     User existingUser = response.body();
                     boolean isAdmin = existingUser.isAdmin(); // Retain admin status
+                    Set<String> favorites = existingUser.getFavorites();
 
-                    // Create updated user object while keeping the admin status
-                    User updatedUser = new User(newUsername, newEmail, newPassword, isAdmin);
+                    if (newPassword.isEmpty()) {
+                        Toast.makeText(getContext(), "Please pick a password", Toast.LENGTH_SHORT).show();
+                    } else if (newUsername.isEmpty()) {
+                        Toast.makeText(getContext(), "Please pick a user name", Toast.LENGTH_SHORT).show();
+                    } else if (newEmail.isEmpty()) {
+                        Toast.makeText(getContext(), "Please pick an email", Toast.LENGTH_SHORT).show();
+                    } else {
 
-                    // Now send the update request
-                    Call<User> updateCall = apiService.updateUser(userId, updatedUser);
-                    updateCall.enqueue(new Callback<User>() {
-                        @Override
-                        public void onResponse(Call<User> call, Response<User> response) {
-                            if (response.isSuccessful()) {
-                                Log.d("UpdateUser", "User updated successfully: " + response.body());
-                            } else {
-                                Log.e("UpdateUser", "Failed to update user, response code: " + response.code());
+                        // Create updated user object while keeping the admin status
+                        User updatedUser = new User(newUsername, newEmail, newPassword, isAdmin, favorites);
+
+                        // Now send the update request
+                        Call<User> updateCall = apiService.updateUser(userId, updatedUser);
+                        updateCall.enqueue(new Callback<User>() {
+                            @Override
+                            public void onResponse(Call<User> call, Response<User> response) {
+                                if (response.isSuccessful()) {
+                                    Toast.makeText(getContext(), "Updated successfully!", Toast.LENGTH_SHORT).show();
+                                    NavHostFragment.findNavController(AccountSettingsFragment.this).navigateUp();
+                                    Log.d("UpdateUser", "User updated successfully: " + response.body());
+                                } else {
+                                    Log.e("UpdateUser", "Failed to update user, response code: " + response.code());
+                                }
                             }
-                        }
 
-                        @Override
-                        public void onFailure(Call<User> call, Throwable t) {
-                            Log.e("UpdateUser", "Network failure: " + t.getMessage());
-                        }
-                    });
+                            @Override
+                            public void onFailure(Call<User> call, Throwable t) {
+                                Log.e("UpdateUser", "Network failure: " + t.getMessage());
+                            }
+                        });
+                    }
 
                 } else {
                     Log.e("GetUser", "Failed to fetch user data, response code: " + response.code());

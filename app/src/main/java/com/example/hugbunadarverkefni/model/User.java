@@ -1,6 +1,7 @@
 package com.example.hugbunadarverkefni.model;
 
 import java.util.List;
+import java.util.Set;
 
 public class User {
     private Long id;
@@ -10,16 +11,18 @@ public class User {
     private boolean admin;
     private List<Recipe> recipes;
     private List<Rating> ratings;
+    private Set<String> favorites;
 
     // Default Constructor
     public User() {}
 
     // Constructor
-    public User(String username, String email, String password, boolean admin) {
+    public User(String username, String email, String password, boolean admin, Set<String> favorites) {
         this.username = username;
         this.email = email;
         this.password = password;
         this.admin = admin;
+        this.favorites = favorites;
     }
 
 
@@ -43,4 +46,7 @@ public class User {
 
     public List<Rating> getRatings() { return ratings; }
     public void setRatings(List<Rating> ratings) { this.ratings = ratings; }
+
+    public Set<String> getFavorites(){ return favorites; }
+    public void setFavorites(Set<String> favorites){ this.favorites = favorites; }
 }

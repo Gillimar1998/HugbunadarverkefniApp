@@ -17,6 +17,8 @@ import com.example.hugbunadarverkefni.api.UserApiService;
 import com.example.hugbunadarverkefni.model.LoginRequest;
 import com.example.hugbunadarverkefni.model.User;
 
+import java.util.Set;
+
 import retrofit2.Call;
 import retrofit2.Callback;
 import retrofit2.Response;
@@ -33,6 +35,7 @@ public class LoginActivity extends AppCompatActivity {
         // Check if user is already logged in
         SharedPreferences sharedPreferences = getSharedPreferences("UserPrefs", MODE_PRIVATE);
         boolean isLoggedIn = sharedPreferences.getBoolean("isLoggedIn", false);
+
 
         if (isLoggedIn) {
             // If user is already logged in, go to MainActivity
@@ -65,7 +68,11 @@ public class LoginActivity extends AppCompatActivity {
             return;
         }
 
+
+
         UserApiService apiService = RetrofitClient.getUserApiService();
+
+
         LoginRequest loginRequest = new LoginRequest(username, "", password);
 
         Call<User> call = apiService.login(loginRequest);
@@ -82,7 +89,28 @@ public class LoginActivity extends AppCompatActivity {
                     editor.putLong("user_Id", user.getId());
                     editor.putBoolean("isAdmin", user.isAdmin());
                     editor.putBoolean("isLoggedIn", true);
-                    editor.apply();
+
+                    Call<Set<String>> call1 = apiService.getUserFavorites(user.getId());
+                    call1.enqueue(new Callback<Set<String>>() {
+                        @Override
+                        public void onResponse(Call <Set<String>> call1, Response<Set<String>> response1){
+                            if (response1.body() != null && response1.isSuccessful()) {
+                                Set<String> favorites = response1.body();
+                                editor.putStringSet("favorites", favorites);
+                                editor.apply();
+                                Log.d("Favorites", "Favorites saved in session " + response1.body());
+                            } else {
+                                Log.e("Favorites", "Failed to fetch favorites: " + response1.errorBody());
+                            }
+                        }
+
+                        @Override
+                        public void onFailure(Call<Set<String>> call, Throwable t) {
+                            Toast.makeText(LoginActivity.this, "Error: " + t.getMessage(), Toast.LENGTH_SHORT).show();
+                        }
+                    });
+
+
 
                     Log.d("LoginDebug", "User logged in: " + user.getUsername());
 

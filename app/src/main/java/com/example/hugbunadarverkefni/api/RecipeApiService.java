@@ -37,7 +37,6 @@ public interface RecipeApiService {
             @Part MultipartBody.Part file
     );
 
-
     @POST("/recipes/{id}/like")
     Call<Map<String, Object>> likeRecipe(@Path("id") long recipeId, @Query("userId") long userId);
 
