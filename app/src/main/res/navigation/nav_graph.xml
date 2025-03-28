@@ -46,8 +46,21 @@
         android:label="AccountSettingsFragment" />
 
     <action
+        android:id="@+id/action_AccountSettingsFragment_to_FavoritesViewFragment"
+        app:destination="@+id/FavoritesViewFragment"/>
+
+    <action
         android:id="@+id/action_RecipesViewFragment_to_AccountSettingsFragment"
         app:destination="@id/AccountSettingsFragment" />
+
+    <fragment
+        android:id="@+id/FavoritesViewFragment"
+        android:name="com.example.hugbunadarverkefni.ui.FavoritesViewFragment"
+        android:label="FavoritesViewFragment"/>
+    <action
+        android:id="@+id/action_FavoritesViewFragment_to_RecipeViewFragment"
+        app:destination="@+id/RecipeViewFragment"
+        />
 
 
     <fragment

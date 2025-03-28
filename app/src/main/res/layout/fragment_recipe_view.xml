@@ -34,10 +34,10 @@
                 android:background="@android:color/darker_gray"
                 android:contentDescription="Recipe Image"/>
 
-            <!-- Category, Duration, Creation Date -->
+            <!-- Category, Duration, Creation Date, Private Post  -->
             <LinearLayout
                 android:layout_width="match_parent"
-                android:layout_height="wrap_content"
+                android:layout_height="97dp"
                 android:orientation="horizontal"
                 android:paddingTop="10dp"
                 android:weightSum="3">
@@ -45,63 +45,74 @@
                 <TextView
                     android:id="@+id/recipeCategory"
                     android:layout_width="0dp"
-                    android:layout_height="wrap_content"
+                    android:layout_height="60dp"
+                    android:layout_weight="1"
                     android:text="Category: Italian"
-                    android:textSize="16sp"
-                    android:layout_weight="1"/>
+                    android:textSize="16sp" />
 
                 <TextView
                     android:id="@+id/recipeCookTime"
                     android:layout_width="0dp"
-                    android:layout_height="wrap_content"
+                    android:layout_height="64dp"
+                    android:layout_weight="1"
                     android:text="Duration: 30 min"
-                    android:textSize="16sp"
-                    android:layout_weight="1"/>
+                    android:textSize="16sp" />
 
                 <TextView
                     android:id="@+id/recipeCreationDate"
                     android:layout_width="0dp"
-                    android:layout_height="wrap_content"
+                    android:layout_height="62dp"
+                    android:layout_weight="1"
                     android:text="Created on: 28 Feb 2025"
-                    android:textSize="14sp"
-                    android:layout_weight="1"/>
+                    android:textSize="14sp" />
+
+
             </LinearLayout>
 
             <!-- Likes & Like Button -->
-            <LinearLayout
-                android:layout_width="wrap_content"
+            <TextView
+                android:id="@+id/recipeDescription"
+                android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:orientation="horizontal"
+                android:lineSpacingExtra="5dp"
+                android:paddingTop="10dp"
+                android:paddingBottom="10dp"
+                android:text="Description: Pasta, Bacon, Egg"
+                android:textSize="16sp" />
+
+            <TextView
+                android:id="@+id/recipePrivate"
+                android:layout_width="124dp"
+                android:layout_height="58dp"
+                android:gravity = "center"
+                android:text="private"
+                android:textSize="14sp" />
+
+            <LinearLayout
+                android:layout_width="119dp"
+                android:layout_height="75dp"
                 android:gravity="center_vertical"
+                android:orientation="horizontal"
                 android:paddingTop="10dp">
 
                 <TextView
                     android:id="@+id/recipeLikes"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
+                    android:paddingEnd="10dp"
                     android:text="Likes: 1"
-                    android:textSize="16sp"
-                    android:paddingEnd="10dp"/>
+                    android:textSize="16sp" />
 
                 <ImageButton
                     android:id="@+id/btnLike"
-                    android:layout_width="32dp"
-                    android:layout_height="32dp"
-                    android:src="@drawable/ic_favorite_border"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
                     android:background="?attr/selectableItemBackgroundBorderless"
-                    android:contentDescription="Like Button"/>
+                    android:contentDescription="Like Button"
+                    android:src="@drawable/ic_favorite_border" />
             </LinearLayout>
 
             <!-- Description -->
-            <TextView
-                android:id="@+id/recipeDescription"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:text="Description: Pasta, Bacon, Egg"
-                android:textSize="16sp"
-                android:paddingTop="10dp"
-                android:paddingBottom="10dp"
-                android:lineSpacingExtra="5dp"/>
 
             <!-- Comments Section -->
             <TextView

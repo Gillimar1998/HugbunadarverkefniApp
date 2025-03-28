@@ -14,6 +14,8 @@ import com.example.hugbunadarverkefni.api.RetrofitClient;
 import com.example.hugbunadarverkefni.api.UserApiService;
 import com.example.hugbunadarverkefni.model.User;
 
+import java.util.HashSet;
+
 import retrofit2.Call;
 import retrofit2.Callback;
 import retrofit2.Response;
@@ -53,7 +55,7 @@ public class RegisterActivity extends AppCompatActivity {
         }
 
         UserApiService apiService = RetrofitClient.getUserApiService();
-        User newUser = new User(username, email, password, false);
+        User newUser = new User(username, email, password, false,new HashSet<>());
 
         Call<User> call = apiService.registerUser(newUser);
         call.enqueue(new Callback<User>() {

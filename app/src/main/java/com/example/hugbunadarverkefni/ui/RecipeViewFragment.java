@@ -3,6 +3,7 @@ package com.example.hugbunadarverkefni.ui;
 import static android.content.Context.MODE_PRIVATE;
 
 import android.app.AlertDialog;
+import android.content.Context;
 import android.content.SharedPreferences;
 import android.os.Build;
 import android.os.Bundle;
@@ -25,12 +26,17 @@ import androidx.navigation.fragment.NavHostFragment;
 import com.example.hugbunadarverkefni.R;
 import com.example.hugbunadarverkefni.api.RecipeApiService;
 import com.example.hugbunadarverkefni.api.RetrofitClient;
+import com.example.hugbunadarverkefni.api.UserApiService;
 import com.example.hugbunadarverkefni.model.Comment;
 import com.example.hugbunadarverkefni.model.Recipe;
+import com.example.hugbunadarverkefni.model.User;
 
 import java.io.IOException;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
+import java.util.Set;
 
 import retrofit2.Call;
 import retrofit2.Callback;
@@ -38,11 +44,13 @@ import retrofit2.Response;
 
 public class RecipeViewFragment extends Fragment {
 
-    private TextView titleTextView, categoryTextView, cookTimeTextView, descriptionTextView, likesTextView;
+    private TextView titleTextView, categoryTextView, cookTimeTextView, descriptionTextView, likesTextView, recipePrivate;
     private ImageView recipeImageView;
     private LinearLayout commentsContainer;
+    private SharedPreferences sharedPreferences;
+    private UserApiService userApiService;
     private ImageButton likeButton;
-    private long recipeId;
+    private long recipeId, userId;
     private int likeCount = 0;
     private Button btnDeleteRecipe, btnEditRecipe;
 
@@ -55,6 +63,7 @@ public class RecipeViewFragment extends Fragment {
         categoryTextView = view.findViewById(R.id.recipeCategory);
         cookTimeTextView = view.findViewById(R.id.recipeCookTime);
         descriptionTextView = view.findViewById(R.id.recipeDescription);
+        recipePrivate = view.findViewById(R.id.recipePrivate);
         likesTextView = view.findViewById(R.id.recipeLikes);
         recipeImageView = view.findViewById(R.id.ivRecipeImage); // ImageView for recipe image
         commentsContainer = view.findViewById(R.id.commentsContainer);
@@ -63,6 +72,7 @@ public class RecipeViewFragment extends Fragment {
         btnEditRecipe = view.findViewById(R.id.btnEditRecipe);
 
         btnEditRecipe.setVisibility(View.GONE); // default hide the edit button
+
 
 
         // Get recipe ID from arguments
@@ -76,6 +86,8 @@ public class RecipeViewFragment extends Fragment {
         }
 
 
+
+
         // Like button click event
         likeButton.setOnClickListener(v -> {
             SharedPreferences sharedPreferences = requireActivity().getSharedPreferences("UserPrefs", MODE_PRIVATE);
@@ -85,6 +97,9 @@ public class RecipeViewFragment extends Fragment {
                 Toast.makeText(getContext(), "User not logged in", Toast.LENGTH_SHORT).show();
                 return;
             }
+
+            SharedPreferences.Editor editor = sharedPreferences.edit();
+            Set<String> favorites = sharedPreferences.getStringSet("favorites", new HashSet<>());
 
             RecipeApiService apiService = RetrofitClient.getClient().create(RecipeApiService.class);
             Call<Map<String, Object>> call = apiService.likeRecipe(recipeId, userId);
@@ -105,12 +120,52 @@ public class RecipeViewFragment extends Fragment {
                         // Update UI
                         likesTextView.setText("Likes: " + likeCount);
                         if (isLiked) {
-                            Toast.makeText(getContext(), "Liked!", Toast.LENGTH_SHORT).show();
+                            favorites.add(String.valueOf(recipeId));
+                            editor.putStringSet("favorites", favorites);
+                            editor.apply();
+                            UserApiService userApiService = RetrofitClient.getClient().create(UserApiService.class);
+                            Call<User> callObject = userApiService.addRecipeToFavorites(userId, recipeId);
+
+                            callObject.enqueue(new Callback<User>(){
+                                @Override
+                                public void onResponse(Call<User> callobject, Response<User> responseUser) {
+                                    User responseBodyUser = responseUser.body();
+                                    Objects.requireNonNull(responseBodyUser).setFavorites(favorites);
+                                }
+
+                                @Override
+                                public void onFailure(Call<User> callobject, Throwable t) {
+                                    //Toast.makeText(getContext(), "Network error with user: " + t.getMessage(), Toast.LENGTH_SHORT).show();
+                                }
+                            });
+
+                            Toast.makeText(getContext(), "Liked and added to Favorites!", Toast.LENGTH_SHORT).show();
                             likeButton.setImageResource(R.drawable.ic_favorite_filled); // Change to "liked" image
                         } else {
-                            Toast.makeText(getContext(), "Unliked!", Toast.LENGTH_SHORT).show();
+                            favorites.remove(String.valueOf(recipeId));
+                            editor.putStringSet("favorites", favorites);
+                            editor.apply();
+                            UserApiService userApiService = RetrofitClient.getClient().create(UserApiService.class);
+                            Call<User> callObject = userApiService.removeRecipeFromFavorites(userId, recipeId);
+
+                            callObject.enqueue(new Callback<User>(){
+                                @Override
+                                public void onResponse(Call<User> callobject, Response<User> responseUser) {
+                                    User responseBodyUser = responseUser.body();
+                                    Objects.requireNonNull(responseBodyUser).setFavorites(favorites);
+                                }
+
+                                @Override
+                                public void onFailure(Call<User> callobject, Throwable t) {
+                                    //Toast.makeText(getContext(), "Network error with user: " + t.getMessage(), Toast.LENGTH_SHORT).show();
+                                }
+                            });
+
+                            Toast.makeText(getContext(), "Unliked and removed from Favorites!", Toast.LENGTH_SHORT).show();
                             likeButton.setImageResource(R.drawable.ic_favorite_border); // Change to "unliked" image
                         }
+
+
                     } else {
                         Toast.makeText(getContext(), "Failed to update like", Toast.LENGTH_SHORT).show();
                     }
@@ -157,6 +212,7 @@ public class RecipeViewFragment extends Fragment {
         cookTimeTextView.setText("Duration: " + recipe.getCookTime() + " min");
         descriptionTextView.setText("Description: " + recipe.getDescription());
         likesTextView.setText("Likes: " + recipe.getLikeCount());
+        recipePrivate.setText("PostPrivate :" + recipe.isPrivatePost());
 
         // Handle ImageView visibility
         if (recipe.getImage() != null && recipe.getImage().getUrl() != null && !recipe.getImage().getUrl().isEmpty()) {
@@ -171,12 +227,18 @@ public class RecipeViewFragment extends Fragment {
         }
 
         SharedPreferences sharedPreferences = requireActivity().getSharedPreferences("UserPrefs", MODE_PRIVATE);
-        long userId = sharedPreferences.getLong("user_Id", -1);
+        userId = sharedPreferences.getLong("user_Id", -1);
+        boolean isAdmin = sharedPreferences.getBoolean("isAdmin", false);
+
+        if (isAdmin){
+            recipePrivate.setVisibility(View.VISIBLE);
+        } else {
+            recipePrivate.setVisibility(View.INVISIBLE);
+        }
 
         likesTextView.setText("Likes: " + recipe.getLikeCount());
 
-        // delete button and edit button visability
-        if (recipe.getUser().getId() == userId) {
+        if (recipe.getUser().getId() == userId || isAdmin) {
             btnDeleteRecipe.setVisibility(View.VISIBLE);
             btnEditRecipe.setVisibility(View.VISIBLE);
 
@@ -276,11 +338,6 @@ public class RecipeViewFragment extends Fragment {
             }
         });
     }
-
-
-
-
-
 }
 
 
