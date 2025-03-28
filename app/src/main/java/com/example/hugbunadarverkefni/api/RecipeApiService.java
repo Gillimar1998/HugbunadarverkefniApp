@@ -12,7 +12,9 @@ import retrofit2.http.Body;
 import retrofit2.http.DELETE;
 import retrofit2.http.GET;
 import retrofit2.http.Multipart;
+import retrofit2.http.PATCH;
 import retrofit2.http.POST;
+import retrofit2.http.PUT;
 import retrofit2.http.Part;
 import retrofit2.http.Path;
 import retrofit2.http.Query;
@@ -45,5 +47,10 @@ public interface RecipeApiService {
     @GET("/recipes/search")
     Call<List<Recipe>> searchRecipes(@Query("name") String name);
 
+    @PUT("/recipes/{id}")
+    Call<Recipe> editRecipe(@Path("id") long id, @Body Recipe recipe);
+
+    @PATCH("/recipes/{id}")
+    Call<Recipe> patchRecipe(@Path("id") long id, @Body RequestBody body);
 
 }

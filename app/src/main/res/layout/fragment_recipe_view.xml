@@ -119,6 +119,17 @@
                 android:orientation="vertical"/>
 
             <Button
+                android:id="@+id/btnEditRecipe"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Edit"
+                android:visibility="gone"
+                android:layout_below="@id/recipeLikes"
+                android:layout_marginTop="10dp"
+                android:layout_alignParentEnd="true"
+                android:layout_marginEnd="16dp"/>
+
+            <Button
                 android:id="@+id/btnDeleteRecipe"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
@@ -126,7 +137,8 @@
                 android:layout_marginTop="16dp"
                 android:visibility="gone"/>
 
+
         </LinearLayout>
 
-    </ScrollView>
+</ScrollView>
 
