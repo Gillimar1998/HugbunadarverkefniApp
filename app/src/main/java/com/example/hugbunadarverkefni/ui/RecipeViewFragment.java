@@ -52,7 +52,7 @@ public class RecipeViewFragment extends Fragment {
     private ImageButton likeButton;
     private long recipeId, userId;
     private int likeCount = 0;
-    private Button btnDeleteRecipe;
+    private Button btnDeleteRecipe, btnEditRecipe;
 
     @Override
     public View onCreateView(@NonNull LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState) {
@@ -69,6 +69,9 @@ public class RecipeViewFragment extends Fragment {
         commentsContainer = view.findViewById(R.id.commentsContainer);
         likeButton = view.findViewById(R.id.btnLike);
         btnDeleteRecipe = view.findViewById(R.id.btnDeleteRecipe);
+        btnEditRecipe = view.findViewById(R.id.btnEditRecipe);
+
+        btnEditRecipe.setVisibility(View.GONE); // default hide the edit button
 
 
 
@@ -222,6 +225,7 @@ public class RecipeViewFragment extends Fragment {
         } else {
             recipeImageView.setVisibility(View.GONE); // Hide ImageView if no image is available
         }
+
         SharedPreferences sharedPreferences = requireActivity().getSharedPreferences("UserPrefs", MODE_PRIVATE);
         userId = sharedPreferences.getLong("user_Id", -1);
         boolean isAdmin = sharedPreferences.getBoolean("isAdmin", false);
@@ -236,14 +240,19 @@ public class RecipeViewFragment extends Fragment {
 
         if (recipe.getUser().getId() == userId || isAdmin) {
             btnDeleteRecipe.setVisibility(View.VISIBLE);
+            btnEditRecipe.setVisibility(View.VISIBLE);
+
             btnDeleteRecipe.setOnClickListener(v -> showDeleteConfirmation(recipeId));
+            btnEditRecipe.setOnClickListener(v -> navigateToEditRecipe(recipeId));
         }
 
+        // like button
         if (recipe.getLikedUserIDs().contains(userId)) {
             likeButton.setImageResource(R.drawable.ic_favorite_filled);
         } else {
             likeButton.setImageResource(R.drawable.ic_favorite_border);
         }
+
         // Load comments dynamically
         commentsContainer.removeAllViews();
         if (recipe.getComments() != null && !recipe.getComments().isEmpty()) {
@@ -283,6 +292,12 @@ public class RecipeViewFragment extends Fragment {
             noComments.setPadding(10, 5, 10, 5);
             commentsContainer.addView(noComments);
         }
+    }
+
+    private void navigateToEditRecipe(long recipeId) {
+        Bundle bundle = new Bundle();
+        bundle.putLong("recipeId", recipeId);
+        NavHostFragment.findNavController(this).navigate(R.id.action_recipeViewFragment_to_EditRecipeFragment, bundle);
     }
 
     private void showDeleteConfirmation(long recipeId) {

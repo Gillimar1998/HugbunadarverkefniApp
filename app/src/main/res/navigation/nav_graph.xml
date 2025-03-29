@@ -29,7 +29,16 @@
         <action
             android:id="@+id/action_recipeViewFragment_to_recipesViewFragment"
             app:destination="@id/RecipesViewFragment"/>
+        <action
+            android:id="@+id/action_recipeViewFragment_to_EditRecipeFragment"
+            app:destination="@id/EditRecipeFragment" />
     </fragment>
+
+    <fragment
+        android:id="@+id/EditRecipeFragment"
+        android:name="com.example.hugbunadarverkefni.ui.EditRecipeFragment"
+        android:label="EditRecipeFragment"
+        tools:layout="@layout/fragment_edit_recipe" />
 
     <fragment
         android:id="@+id/AccountSettingsFragment"
