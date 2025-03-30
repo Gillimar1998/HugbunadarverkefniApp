@@ -19,6 +19,7 @@ import android.widget.TextView;
 import android.widget.Toast;
 import androidx.annotation.NonNull;
 import androidx.fragment.app.Fragment;
+import android.widget.EditText;
 
 import com.bumptech.glide.Glide;
 
@@ -32,6 +33,7 @@ import com.example.hugbunadarverkefni.model.Recipe;
 import com.example.hugbunadarverkefni.model.User;
 
 import java.io.IOException;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
@@ -53,6 +55,8 @@ public class RecipeViewFragment extends Fragment {
     private long recipeId, userId;
     private int likeCount = 0;
     private Button btnDeleteRecipe, btnEditRecipe;
+    private EditText commentInput;
+    private Button commentSubmit;
 
     @Override
     public View onCreateView(@NonNull LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState) {
@@ -70,6 +74,8 @@ public class RecipeViewFragment extends Fragment {
         likeButton = view.findViewById(R.id.btnLike);
         btnDeleteRecipe = view.findViewById(R.id.btnDeleteRecipe);
         btnEditRecipe = view.findViewById(R.id.btnEditRecipe);
+        commentInput = view.findViewById(R.id.commentInput);
+        commentSubmit = view.findViewById(R.id.commentSubmit);
 
         btnEditRecipe.setVisibility(View.GONE); // default hide the edit button
 
@@ -85,7 +91,7 @@ public class RecipeViewFragment extends Fragment {
             }
         }
 
-
+        commentSubmit.setOnClickListener(v -> submitComment());
 
 
         // Like button click event
@@ -181,6 +187,42 @@ public class RecipeViewFragment extends Fragment {
 
         return view;
     }
+
+    private void submitComment() {
+        String content = commentInput.getText().toString().trim();
+        if (content.isEmpty()) {
+            Toast.makeText(getContext(), "Comment cannot be empty", Toast.LENGTH_SHORT).show();
+            return;
+        }
+
+        SharedPreferences sharedPreferences = requireActivity().getSharedPreferences("UserPrefs", MODE_PRIVATE);
+        long userId = sharedPreferences.getLong("user_Id", -1);
+
+        RecipeApiService apiService = RetrofitClient.getClient().create(RecipeApiService.class);
+        Map<String, Object> body = new HashMap<>();
+        body.put("userId", userId);
+        body.put("content", content);
+
+        apiService.postComment(recipeId, body).enqueue(new Callback<Comment>() {
+            @Override
+            public void onResponse(Call<Comment> call, Response<Comment> response) {
+                if (response.isSuccessful()) {
+                    Toast.makeText(getContext(), "Comment added", Toast.LENGTH_SHORT).show();
+                    fetchRecipeDetails(recipeId);
+                    commentInput.setText("");
+                } else {
+                    Toast.makeText(getContext(), "Failed to add comment", Toast.LENGTH_SHORT).show();
+                }
+            }
+
+            @Override
+            public void onFailure(Call<Comment> call, Throwable t) {
+                Toast.makeText(getContext(), "Network error: " + t.getMessage(), Toast.LENGTH_SHORT).show();
+            }
+        });
+    }
+
+
 
     private void fetchRecipeDetails(long recipeId) {
         RecipeApiService apiService = RetrofitClient.getClient().create(RecipeApiService.class);
@@ -292,6 +334,24 @@ public class RecipeViewFragment extends Fragment {
             noComments.setPadding(10, 5, 10, 5);
             commentsContainer.addView(noComments);
         }
+    }
+
+    private void deleteComment(long commentId) {
+        RecipeApiService apiService = RetrofitClient.getClient().create(RecipeApiService.class);
+        apiService.deleteComment(recipeId, commentId).enqueue(new Callback<Void>() {
+            @Override
+            public void onResponse(Call<Void> call, Response<Void> response) {
+                if (response.isSuccessful()) {
+                    Toast.makeText(getContext(), "Comment deleted", Toast.LENGTH_SHORT).show();
+                    fetchRecipeDetails(recipeId);
+                }
+            }
+
+            @Override
+            public void onFailure(Call<Void> call, Throwable t) {
+                Toast.makeText(getContext(), "Error: " + t.getMessage(), Toast.LENGTH_SHORT).show();
+            }
+        });
     }
 
     private void navigateToEditRecipe(long recipeId) {

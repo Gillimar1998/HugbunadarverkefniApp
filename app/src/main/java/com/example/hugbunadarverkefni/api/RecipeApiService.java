@@ -1,5 +1,6 @@
 package com.example.hugbunadarverkefni.api;
 
+import com.example.hugbunadarverkefni.model.Comment;
 import com.example.hugbunadarverkefni.model.Recipe;
 import com.example.hugbunadarverkefni.model.User;
 
@@ -53,5 +54,23 @@ public interface RecipeApiService {
 
     @PATCH("/recipes/{id}")
     Call<Recipe> patchRecipe(@Path("id") long id, @Body RequestBody body);
+
+    @Multipart
+    @PATCH("/recipes/{id}")
+    Call<Recipe> patchRecipeMultipart(
+            @Path("id") long id,
+            @Part("name") RequestBody name,
+            @Part("description") RequestBody description,
+            @Part("category") RequestBody category,
+            @Part("cookTime") RequestBody cookTime,
+            @Part MultipartBody.Part image
+    );
+
+    @POST("/recipes/{id}/comments")
+    Call<Comment> postComment(@Path("id") long recipeId, @Body Map<String, Object> body);
+
+    // DELETE a specific comment by ID
+    @DELETE("/recipes/{recipeId}/comments/{commentId}")
+    Call<Void> deleteComment(@Path("recipeId") long recipeId, @Path("commentId") long commentId);
 
 }
