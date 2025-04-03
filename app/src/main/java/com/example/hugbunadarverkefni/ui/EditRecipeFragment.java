@@ -1,23 +1,29 @@
 package com.example.hugbunadarverkefni.ui;
 
+import static android.app.Activity.RESULT_OK;
+
+import android.content.Intent;
+import android.database.Cursor;
+import android.net.Uri;
 import android.os.Bundle;
+import android.provider.OpenableColumns;
 import android.text.TextUtils;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.*;
+import androidx.activity.result.ActivityResultLauncher;
+import androidx.activity.result.contract.ActivityResultContracts;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.fragment.app.Fragment;
-
 import androidx.navigation.fragment.NavHostFragment;
 import com.example.hugbunadarverkefni.R;
 import com.example.hugbunadarverkefni.api.RecipeApiService;
 import com.example.hugbunadarverkefni.api.RetrofitClient;
 import com.example.hugbunadarverkefni.model.Recipe;
-
 import org.json.JSONObject;
-
+import java.io.*;
 import okhttp3.MediaType;
 import okhttp3.RequestBody;
 import retrofit2.Call;
@@ -27,10 +33,12 @@ import retrofit2.Response;
 public class EditRecipeFragment extends Fragment {
 
     private EditText etName, etDescription, etCategory, etCookTime;
-    private Button btnSave;
+    private Button btnSave, btnSelectImage;
+    private ImageView imagePreview;
+    private Uri imageUri;
     private long recipeId;
     private Recipe loadedRecipe;
-
+    private ActivityResultLauncher<Intent> imagePickerLauncher;
 
     @Nullable
     @Override
@@ -38,25 +46,79 @@ public class EditRecipeFragment extends Fragment {
                              Bundle savedInstanceState) {
         View view = inflater.inflate(R.layout.fragment_edit_recipe, container, false);
 
-        // initialize UI
         etName = view.findViewById(R.id.etRecipeName);
         etDescription = view.findViewById(R.id.etRecipeDescription);
         etCategory = view.findViewById(R.id.etRecipeCategory);
         etCookTime = view.findViewById(R.id.etRecipeCookTime);
         btnSave = view.findViewById(R.id.btnSaveChanges);
+        btnSelectImage = view.findViewById(R.id.btnSelectImage);
+        imagePreview = view.findViewById(R.id.recipeImage);
 
-        if (getArguments() != null) {
-            recipeId = getArguments().getLong("recipeId", -1);
-            if (recipeId != -1) {
-                loadRecipeDetails(recipeId);
-            } else {
-                Toast.makeText(getContext(), "Invalid recipe ID", Toast.LENGTH_SHORT).show();
-            }
+        imagePickerLauncher = registerForActivityResult(
+                new ActivityResultContracts.StartActivityForResult(),
+                result -> {
+                    if (result.getResultCode() == RESULT_OK && result.getData() != null) {
+                        Uri selectedImage = result.getData().getData();
+                        if (selectedImage != null) {
+                            requireContext().getContentResolver().takePersistableUriPermission(
+                                    selectedImage,
+                                    Intent.FLAG_GRANT_READ_URI_PERMISSION
+                            );
+                            imageUri = selectedImage;
+                            imagePreview.setImageURI(imageUri);
+                        }
+                    } else {
+                        imageUri = null;
+                        Toast.makeText(getContext(), "No image selected", Toast.LENGTH_SHORT).show();
+                    }
+                }
+        );
+
+        btnSelectImage.setOnClickListener(v -> openImageChooser());
+
+        if (getArguments() == null || !getArguments().containsKey("recipeId")) {
+            Toast.makeText(getContext(), "Missing recipe data. Returning...", Toast.LENGTH_SHORT).show();
+            NavHostFragment.findNavController(this).popBackStack();
+            return view;
+        }
+
+        recipeId = getArguments().getLong("recipeId", -1);
+        if (recipeId != -1) {
+            loadRecipeDetails(recipeId);
+        } else {
+            Toast.makeText(getContext(), "Invalid recipe ID", Toast.LENGTH_SHORT).show();
         }
 
         btnSave.setOnClickListener(v -> saveRecipe());
 
         return view;
+    }
+
+    private void openImageChooser() {
+        try {
+            Intent intent = new Intent(Intent.ACTION_OPEN_DOCUMENT);
+            intent.setType("image/*");
+            intent.addCategory(Intent.CATEGORY_OPENABLE);
+            imagePickerLauncher.launch(intent);
+        } catch (Exception e) {
+            Toast.makeText(getContext(), "Could not open image picker: " + e.getMessage(), Toast.LENGTH_SHORT).show();
+        }
+    }
+
+    private File copyUriToFile(Uri uri) throws IOException {
+        File outputDir = requireContext().getCacheDir();
+        File tempFile = new File(outputDir, "temp_image.jpg");
+
+        try (InputStream in = requireContext().getContentResolver().openInputStream(uri);
+             OutputStream out = new FileOutputStream(tempFile)) {
+
+            byte[] buffer = new byte[1024];
+            int length;
+            while ((length = in.read(buffer)) > 0) {
+                out.write(buffer, 0, length);
+            }
+        }
+        return tempFile;
     }
 
     private void loadRecipeDetails(long id) {
@@ -65,7 +127,7 @@ public class EditRecipeFragment extends Fragment {
             @Override
             public void onResponse(Call<Recipe> call, Response<Recipe> response) {
                 if (response.isSuccessful() && response.body() != null) {
-                    loadedRecipe = response.body();  // Store original recipe
+                    loadedRecipe = response.body();
                     etName.setText(loadedRecipe.getName());
                     etDescription.setText(loadedRecipe.getDescription());
                     etCategory.setText(loadedRecipe.getCategory());
@@ -82,8 +144,6 @@ public class EditRecipeFragment extends Fragment {
         });
     }
 
-
-
     private void saveRecipe() {
         String name = etName.getText().toString().trim();
         String description = etDescription.getText().toString().trim();
@@ -98,7 +158,6 @@ public class EditRecipeFragment extends Fragment {
 
         int cookTime = Integer.parseInt(cookTimeStr);
 
-        // Build JSON manually
         JSONObject json = new JSONObject();
         try {
             json.put("id", recipeId);
@@ -106,16 +165,19 @@ public class EditRecipeFragment extends Fragment {
             json.put("description", description);
             json.put("category", category);
             json.put("cookTime", cookTime);
+
+            if (imageUri != null) {
+                File copied = copyUriToFile(imageUri);
+                json.put("imagePath", copied.getAbsolutePath());
+            }
         } catch (Exception e) {
             Toast.makeText(getContext(), "JSON error: " + e.getMessage(), Toast.LENGTH_SHORT).show();
             return;
         }
 
-        // Create RequestBody
         MediaType mediaType = MediaType.get("application/json; charset=utf-8");
         RequestBody requestBody = RequestBody.create(mediaType, json.toString());
 
-        // Send PATCH request
         RecipeApiService api = RetrofitClient.getClient().create(RecipeApiService.class);
         api.patchRecipe(recipeId, requestBody).enqueue(new Callback<Recipe>() {
             @Override
@@ -134,5 +196,4 @@ public class EditRecipeFragment extends Fragment {
             }
         });
     }
-
 }
