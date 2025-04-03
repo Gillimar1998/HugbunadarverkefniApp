@@ -3,12 +3,18 @@ package com.example.hugbunadarverkefni.ui;
 import static android.app.Activity.RESULT_OK;
 import static android.content.Context.MODE_PRIVATE;
 
+import static com.google.gson.internal.$Gson$Types.arrayOf;
+
+import android.Manifest;
 import android.content.Context;
 import android.content.Intent;
 import android.content.SharedPreferences;
+import android.content.pm.PackageManager;
 import android.database.Cursor;
+import android.os.Build;
 import android.os.Bundle;
 import android.provider.MediaStore;
+import android.provider.OpenableColumns;
 import android.util.Log;
 import android.net.Uri;
 import android.view.LayoutInflater;
@@ -19,6 +25,8 @@ import android.widget.ImageView;
 import android.widget.Toast;
 
 import androidx.annotation.NonNull;
+import androidx.core.app.ActivityCompat;
+import androidx.core.content.ContextCompat;
 import androidx.fragment.app.Fragment;
 import androidx.navigation.fragment.NavHostFragment;
 import androidx.recyclerview.widget.LinearLayoutManager;
@@ -32,6 +40,9 @@ import com.example.hugbunadarverkefni.databinding.FragmentRecipesViewBinding;
 import com.example.hugbunadarverkefni.model.Recipe;
 import com.example.hugbunadarverkefni.model.User;
 
+import java.io.FileOutputStream;
+import java.io.InputStream;
+import java.io.OutputStream;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
@@ -49,6 +60,7 @@ public class AddRecipeFragment extends Fragment {
     private Uri imageUri;
     private ImageView recipeImagePreview;
     private boolean private_post = false;
+    private static final int STORAGE_PERMISSION_CODE = 100;
 
     @Override
     public View onCreateView(@NonNull LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState) {
@@ -120,13 +132,11 @@ public class AddRecipeFragment extends Fragment {
                         String cookTimeStr = binding.cookTime.getText().toString().trim();
                         int cookTime = 0;
 
-                        // Validate required fields
                         if (title.isEmpty() || description.isEmpty() || category.isEmpty() || cookTimeStr.isEmpty()) {
                             Toast.makeText(getContext(), "Please fill all fields", Toast.LENGTH_SHORT).show();
                             return;
                         }
 
-                        // Validate cook time input
                         try {
                             cookTime = Integer.parseInt(cookTimeStr);
                         } catch (NumberFormatException e) {
@@ -134,7 +144,6 @@ public class AddRecipeFragment extends Fragment {
                             return;
                         }
 
-                        // Prepare the request body for the API
                         RequestBody namePart = RequestBody.create(MediaType.parse("text/plain"), title);
                         RequestBody descriptionPart = RequestBody.create(MediaType.parse("text/plain"), description);
                         RequestBody categoryPart = RequestBody.create(MediaType.parse("text/plain"), category);
@@ -169,7 +178,8 @@ public class AddRecipeFragment extends Fragment {
 
                             @Override
                             public void onFailure(Call<Recipe> call, Throwable t) {
-                                Toast.makeText(getContext(), "Error: " + t.getMessage(), Toast.LENGTH_SHORT).show();
+                                Toast.makeText(getContext(), "Error in adding: " + t.getMessage(), Toast.LENGTH_SHORT).show();
+                                Log.e("AddRecipe", "Error in adding: " + t.getMessage());
                             }
                         });
                     } else {
@@ -188,9 +198,33 @@ public class AddRecipeFragment extends Fragment {
     }
 
     private void openImageChooser() {
+        if (ContextCompat.checkSelfPermission(requireContext(), Manifest.permission.READ_MEDIA_IMAGES) != PackageManager.PERMISSION_GRANTED &&
+                ContextCompat.checkSelfPermission(requireContext(), Manifest.permission.READ_EXTERNAL_STORAGE) != PackageManager.PERMISSION_GRANTED) {
+
+            ActivityCompat.requestPermissions(requireActivity(),
+                    new String[]{Manifest.permission.READ_MEDIA_IMAGES, Manifest.permission.READ_EXTERNAL_STORAGE},
+                    STORAGE_PERMISSION_CODE);
+        } else {
+            pickImageFromGallery();
+        }
+    }
+
+    private void pickImageFromGallery() {
         Intent intent = new Intent(Intent.ACTION_PICK, MediaStore.Images.Media.EXTERNAL_CONTENT_URI);
         intent.setType("image/*");
         startActivityForResult(intent, PICK_IMAGE_REQUEST);
+    }
+
+    @Override
+    public void onRequestPermissionsResult(int requestCode, @NonNull String[] permissions, @NonNull int[] grantResults) {
+        super.onRequestPermissionsResult(requestCode, permissions, grantResults);
+        if (requestCode == STORAGE_PERMISSION_CODE) {
+            if (grantResults.length > 0 && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
+                pickImageFromGallery();
+            } else {
+                Toast.makeText(getContext(), "Permission denied. Cannot select image.", Toast.LENGTH_SHORT).show();
+            }
+        }
     }
 
     @Override
@@ -212,18 +246,40 @@ public class AddRecipeFragment extends Fragment {
         }
     }
 
-    private String getRealPathFromURI(Uri contentUri) {
-        String[] proj = {MediaStore.Images.Media.DATA};
-        Cursor cursor = requireActivity().getContentResolver().query(contentUri, proj, null, null, null);
-        if (cursor != null) {
-            cursor.moveToFirst();
-            int columnIndex = cursor.getColumnIndexOrThrow(MediaStore.Images.Media.DATA);
-            String filePath = cursor.getString(columnIndex);
-            cursor.close();
-            return filePath;
+    private String getRealPathFromURI(Uri uri) {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+            try (Cursor cursor = requireContext().getContentResolver().query(uri, null, null, null, null)) {
+                if (cursor != null && cursor.moveToFirst()) {
+                    int index = cursor.getColumnIndex(OpenableColumns.DISPLAY_NAME);
+                    if (index != -1) {
+                        String fileName = cursor.getString(index);
+                        File file = new File(requireContext().getCacheDir(), fileName);
+                        try (InputStream inputStream = requireContext().getContentResolver().openInputStream(uri);
+                             OutputStream outputStream = new FileOutputStream(file)) {
+                            byte[] buffer = new byte[1024];
+                            int length;
+                            while ((length = inputStream.read(buffer)) > 0) {
+                                outputStream.write(buffer, 0, length);
+                            }
+                            return file.getAbsolutePath();
+                        }
+                    }
+                }
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
+        } else {
+            String[] proj = {MediaStore.Images.Media.DATA};
+            try (Cursor cursor = requireActivity().getContentResolver().query(uri, proj, null, null, null)) {
+                if (cursor != null && cursor.moveToFirst()) {
+                    int columnIndex = cursor.getColumnIndexOrThrow(MediaStore.Images.Media.DATA);
+                    return cursor.getString(columnIndex);
+                }
+            }
         }
         return null;
     }
+
 
 
 
