@@ -56,12 +56,11 @@
     <fragment
         android:id="@+id/FavoritesViewFragment"
         android:name="com.example.hugbunadarverkefni.ui.FavoritesViewFragment"
-        android:label="FavoritesViewFragment"/>
-    <action
-        android:id="@+id/action_FavoritesViewFragment_to_RecipeViewFragment"
-        app:destination="@+id/RecipeViewFragment"
-        />
-
+        android:label="FavoritesViewFragment">
+        <action
+            android:id="@+id/action_FavoritesViewFragment_to_RecipeViewFragment"
+            app:destination="@+id/RecipeViewFragment" />
+    </fragment>
 
     <fragment
         android:id="@+id/FirstFragment"

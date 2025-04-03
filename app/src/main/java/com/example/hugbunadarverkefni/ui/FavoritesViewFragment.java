@@ -68,6 +68,7 @@ public class FavoritesViewFragment extends Fragment {
         SharedPreferences sharedPreferences = requireActivity().getSharedPreferences("UserPrefs", MODE_PRIVATE);
         long userId = sharedPreferences.getLong("user_Id", -1);
 
+        recipeList.clear();
         getUserFavorites(userId);
     }
 
