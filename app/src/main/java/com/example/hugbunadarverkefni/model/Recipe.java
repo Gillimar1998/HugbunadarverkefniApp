@@ -72,41 +72,41 @@ public class Recipe implements Serializable { // Implements Serializable for pas
 
     public String getName() { return name; }
     public void setName(String name) { this.name = name; }
-  
+
     public String getDescription() { return description; }
     public void setDescription(String description) { this.description = description; }
 
     public String getCategory() { return category; }
     public void setCategory(String category) { this.category = category; }
-  
+
     public int getCookTime() { return cookTime; }
     public void setCookTime(int cookTime) { this.cookTime = cookTime; }
-  
+
     public Date getCreationDate() { return creationDate; }
     public void setCreationDate(Date creationDate) { this.creationDate = creationDate; }
-  
+
      public boolean isPrivatePost() { return privatePost; }
     public void setPrivatePost(boolean privatePost) { this.privatePost = privatePost; }
 
     public List<Long> getLikedUserIDs() { return likedUserIDs; }
     public void setLikedUserIDs(List<Long> likedUserIDs) { this.likedUserIDs = likedUserIDs; }
-    
+
     public int getLikeCount() { return likeCount; }
     public void setLikeCount(int likeCount) { this.likeCount = likeCount; }
-  
+
     public List<Comment> getComments() { return comments; }
     public void setComments(List<Comment> comments) { this.comments = comments; }
-    
+
     public User getUser() { return user; }
     public void setUser(User user) { this.user = user; }
 
     public long getUserId(){ return userId; }
     public void setUserId(long userId){this.userId = userId; }
-    
+
     public Image getImage() { return image; }
     public void setImage(Image image) { this.image = image; }
 
-   
+
 
 }
 
