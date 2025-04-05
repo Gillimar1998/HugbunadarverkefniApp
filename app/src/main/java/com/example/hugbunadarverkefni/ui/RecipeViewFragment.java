@@ -20,6 +20,17 @@ import android.widget.Toast;
 import androidx.annotation.NonNull;
 import androidx.fragment.app.Fragment;
 import android.widget.EditText;
+import android.content.Intent;
+import android.net.Uri;
+import android.text.TextUtils;
+import android.widget.*;
+import androidx.activity.result.ActivityResultLauncher;
+import androidx.activity.result.contract.ActivityResultContracts;
+import androidx.annotation.NonNull;
+import androidx.fragment.app.Fragment;
+import static android.app.Activity.RESULT_OK;
+
+
 
 import com.bumptech.glide.Glide;
 
@@ -32,6 +43,9 @@ import com.example.hugbunadarverkefni.model.Comment;
 import com.example.hugbunadarverkefni.model.Recipe;
 import com.example.hugbunadarverkefni.model.User;
 
+import org.json.JSONObject;
+
+import java.io.*;
 import java.io.IOException;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -40,6 +54,8 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
 
+import okhttp3.MediaType;
+import okhttp3.RequestBody;
 import retrofit2.Call;
 import retrofit2.Callback;
 import retrofit2.Response;
@@ -47,16 +63,18 @@ import retrofit2.Response;
 public class RecipeViewFragment extends Fragment {
 
     private TextView titleTextView, categoryTextView, cookTimeTextView, descriptionTextView, likesTextView, recipePrivate;
-    private ImageView recipeImageView;
+    private ImageView recipeImageView, commentImagePreview;
     private LinearLayout commentsContainer;
     private SharedPreferences sharedPreferences;
     private UserApiService userApiService;
     private ImageButton likeButton;
     private long recipeId, userId;
     private int likeCount = 0;
-    private Button btnDeleteRecipe, btnEditRecipe;
+    private Button btnDeleteRecipe, btnEditRecipe, commentSubmit, btnSelectCommentImage;
     private EditText commentInput;
-    private Button commentSubmit;
+    private ActivityResultLauncher<Intent> imagePickerLauncher;
+    private Uri imageUri;
+
 
     @Override
     public View onCreateView(@NonNull LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState) {
@@ -76,6 +94,8 @@ public class RecipeViewFragment extends Fragment {
         btnEditRecipe = view.findViewById(R.id.btnEditRecipe);
         commentInput = view.findViewById(R.id.commentInput);
         commentSubmit = view.findViewById(R.id.commentSubmit);
+        btnSelectCommentImage = view.findViewById(R.id.btnSelectCommentImage);
+        commentImagePreview = view.findViewById(R.id.commentImagePreview);
 
         btnEditRecipe.setVisibility(View.GONE); // default hide the edit button
 
@@ -92,6 +112,30 @@ public class RecipeViewFragment extends Fragment {
         }
 
         commentSubmit.setOnClickListener(v -> submitComment());
+
+        btnSelectCommentImage.setOnClickListener(v -> openImageChooser());
+
+        imagePickerLauncher = registerForActivityResult(
+                new ActivityResultContracts.StartActivityForResult(),
+                result -> {
+                    if (result.getResultCode() == RESULT_OK && result.getData() != null) {
+                        Uri selectedImage = result.getData().getData();
+                        if (selectedImage != null) {
+                            requireContext().getContentResolver().takePersistableUriPermission(
+                                    selectedImage,
+                                    Intent.FLAG_GRANT_READ_URI_PERMISSION
+                            );
+                            imageUri = selectedImage;
+                            commentImagePreview.setVisibility(View.VISIBLE);
+                            commentImagePreview.setImageURI(imageUri);
+                        }
+                    } else {
+                        imageUri = null;
+                        commentImagePreview.setVisibility(View.GONE);
+                        Toast.makeText(getContext(), "No image selected", Toast.LENGTH_SHORT).show();
+                    }
+                }
+        );
 
 
         // Like button click event
@@ -188,28 +232,73 @@ public class RecipeViewFragment extends Fragment {
         return view;
     }
 
+    private void openImageChooser() {
+        try {
+            Intent intent = new Intent(Intent.ACTION_OPEN_DOCUMENT);
+            intent.setType("image/*");
+            intent.addCategory(Intent.CATEGORY_OPENABLE);
+            imagePickerLauncher.launch(intent);
+        } catch (Exception e) {
+            Toast.makeText(getContext(), "Could not open image picker: " + e.getMessage(), Toast.LENGTH_SHORT).show();
+        }
+    }
+
+    private File copyUriToFile(Uri uri) throws IOException {
+        File outputDir = requireContext().getCacheDir();
+        File tempFile = new File(outputDir, "temp_comment_image.jpg");
+
+        try (InputStream in = requireContext().getContentResolver().openInputStream(uri);
+             OutputStream out = new FileOutputStream(tempFile)) {
+
+            byte[] buffer = new byte[1024];
+            int length;
+            while ((length = in.read(buffer)) > 0) {
+                out.write(buffer, 0, length);
+            }
+        }
+        return tempFile;
+    }
+
+
     private void submitComment() {
         String content = commentInput.getText().toString().trim();
-        if (content.isEmpty()) {
+        if (TextUtils.isEmpty(content)) {
             Toast.makeText(getContext(), "Comment cannot be empty", Toast.LENGTH_SHORT).show();
             return;
         }
 
-        SharedPreferences sharedPreferences = requireActivity().getSharedPreferences("UserPrefs", MODE_PRIVATE);
-        long userId = sharedPreferences.getLong("user_Id", -1);
+        long userId = requireActivity().getSharedPreferences("UserPrefs", 0).getLong("user_Id", -1);
+        if (userId == -1) {
+            Toast.makeText(getContext(), "User not logged in", Toast.LENGTH_SHORT).show();
+            return;
+        }
+
+        JSONObject json = new JSONObject();
+        try {
+            json.put("recipeId", recipeId);
+            json.put("userId", userId);
+            json.put("content", content);
+
+            if (imageUri != null) {
+                File copied = copyUriToFile(imageUri);
+                json.put("imagePath", copied.getAbsolutePath());
+            }
+        } catch (Exception e) {
+            Toast.makeText(getContext(), "Error building comment JSON: " + e.getMessage(), Toast.LENGTH_SHORT).show();
+            return;
+        }
+
+        MediaType mediaType = MediaType.get("application/json; charset=utf-8");
+        RequestBody requestBody = RequestBody.create(mediaType, json.toString());
 
         RecipeApiService apiService = RetrofitClient.getClient().create(RecipeApiService.class);
-        Map<String, Object> body = new HashMap<>();
-        body.put("userId", userId);
-        body.put("content", content);
-
-        apiService.postComment(recipeId, body).enqueue(new Callback<Comment>() {
+        apiService.postCommentJson(requestBody).enqueue(new Callback<Comment>() {
             @Override
             public void onResponse(Call<Comment> call, Response<Comment> response) {
                 if (response.isSuccessful()) {
-                    Toast.makeText(getContext(), "Comment added", Toast.LENGTH_SHORT).show();
-                    fetchRecipeDetails(recipeId);
+                    Toast.makeText(getContext(), "Comment added!", Toast.LENGTH_SHORT).show();
                     commentInput.setText("");
+                    commentImagePreview.setVisibility(View.GONE);
                 } else {
                     Toast.makeText(getContext(), "Failed to add comment", Toast.LENGTH_SHORT).show();
                 }

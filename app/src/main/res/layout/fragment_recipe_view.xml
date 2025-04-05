@@ -136,6 +136,23 @@
                 android:hint="Write a comment..."
                 android:layout_marginTop="10dp" />
 
+            <ImageView
+                android:id="@+id/commentImagePreview"
+                android:layout_width="200dp"
+                android:layout_height="200dp"
+                android:visibility="gone"
+                android:layout_marginTop="8dp"
+                android:scaleType="centerCrop"
+                android:src="@drawable/ic_placeholder_image" />
+
+            <Button
+                android:id="@+id/btnSelectCommentImage"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Select Comment Image"
+                android:layout_marginTop="8dp"/>
+
+
             <!-- Submit Comment Button -->
             <Button
                 android:id="@+id/commentSubmit"
