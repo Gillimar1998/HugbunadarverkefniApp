@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="utf-8"?>
-<ScrollView
+<androidx.core.widget.NestedScrollView
     xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools"
@@ -7,142 +7,148 @@
     android:layout_height="match_parent"
     android:padding="16dp">
 
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:gravity="center_horizontal">
+
+        <!-- Title -->
+        <TextView
+            android:id="@+id/recipeTitle"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Recipe Title"
+            android:textSize="24sp"
+            android:textStyle="bold"
+            android:gravity="center"
+            android:paddingBottom="10dp"/>
+
+        <!-- Image Placeholder -->
+        <ImageView
+            android:id="@+id/ivRecipeImage"
+            android:layout_width="200dp"
+            android:layout_height="200dp"
+            android:scaleType="centerCrop"
+            android:src="@drawable/ic_placeholder_image"
+            android:background="@android:color/darker_gray"
+            android:contentDescription="Recipe Image"/>
+
+        <!-- Category, Duration, Creation Date, Private Post  -->
         <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:orientation="vertical"
-            android:gravity="center_horizontal">
+            android:orientation="horizontal"
+            android:paddingTop="10dp"
+            android:weightSum="3">
 
-            <!-- Title -->
             <TextView
-                android:id="@+id/recipeTitle"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text="Recipe Title"
-                android:textSize="24sp"
-                android:textStyle="bold"
-                android:gravity="center"
-                android:paddingBottom="10dp"/>
-
-            <!-- Image Placeholder -->
-            <ImageView
-                android:id="@+id/ivRecipeImage"
-                android:layout_width="200dp"
-                android:layout_height="200dp"
-                android:scaleType="centerCrop"
-                android:src="@drawable/ic_placeholder_image"
-                android:background="@android:color/darker_gray"
-                android:contentDescription="Recipe Image"/>
-
-            <!-- Category, Duration, Creation Date, Private Post  -->
-            <LinearLayout
-                android:layout_width="match_parent"
-                android:layout_height="97dp"
-                android:orientation="horizontal"
-                android:paddingTop="10dp"
-                android:weightSum="3">
-
-                <TextView
-                    android:id="@+id/recipeCategory"
-                    android:layout_width="0dp"
-                    android:layout_height="60dp"
-                    android:layout_weight="1"
-                    android:text="Category: Italian"
-                    android:textSize="16sp" />
-
-                <TextView
-                    android:id="@+id/recipeCookTime"
-                    android:layout_width="0dp"
-                    android:layout_height="64dp"
-                    android:layout_weight="1"
-                    android:text="Duration: 30 min"
-                    android:textSize="16sp" />
-
-                <TextView
-                    android:id="@+id/recipeCreationDate"
-                    android:layout_width="0dp"
-                    android:layout_height="62dp"
-                    android:layout_weight="1"
-                    android:text="Created on: 28 Feb 2025"
-                    android:textSize="14sp" />
-
-
-            </LinearLayout>
-
-            <!-- Likes & Like Button -->
-            <TextView
-                android:id="@+id/recipeDescription"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:lineSpacingExtra="5dp"
-                android:paddingTop="10dp"
-                android:paddingBottom="10dp"
-                android:text="Description: Pasta, Bacon, Egg"
+                android:id="@+id/recipeCategory"
+                android:layout_width="0dp"
+                android:layout_height="60dp"
+                android:layout_weight="1"
+                android:text="Category: Italian"
                 android:textSize="16sp" />
 
             <TextView
-                android:id="@+id/recipePrivate"
-                android:layout_width="124dp"
-                android:layout_height="58dp"
-                android:gravity = "center"
-                android:text="private"
-                android:textSize="14sp" />
+                android:id="@+id/recipeCookTime"
+                android:layout_width="0dp"
+                android:layout_height="64dp"
+                android:layout_weight="1"
+                android:text="Duration: 30 min"
+                android:textSize="16sp" />
 
-            <LinearLayout
-                android:layout_width="119dp"
-                android:layout_height="75dp"
-                android:gravity="center_vertical"
-                android:orientation="horizontal"
-                android:paddingTop="10dp">
-
-                <TextView
-                    android:id="@+id/recipeLikes"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:paddingEnd="10dp"
-                    android:text="Likes: 1"
-                    android:textSize="16sp" />
-
-                <ImageButton
-                    android:id="@+id/btnLike"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:background="?attr/selectableItemBackgroundBorderless"
-                    android:contentDescription="Like Button"
-                    android:src="@drawable/ic_favorite_border" />
-            </LinearLayout>
-
-            <!-- Description -->
-
-            <!-- Comments Section -->
             <TextView
+                android:id="@+id/recipeCreationDate"
+                android:layout_width="0dp"
+                android:layout_height="62dp"
+                android:layout_weight="1"
+                android:text="Created on: 28 Feb 2025"
+                android:textSize="14sp" />
+        </LinearLayout>
+
+        <!-- Likes & Like Button -->
+        <TextView
+            android:id="@+id/recipeDescription"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:lineSpacingExtra="5dp"
+            android:paddingTop="10dp"
+            android:paddingBottom="10dp"
+            android:text="Description: Pasta, Bacon, Egg"
+            android:textSize="16sp" />
+
+        <TextView
+            android:id="@+id/recipePrivate"
+            android:layout_width="124dp"
+            android:layout_height="58dp"
+            android:gravity="center"
+            android:text="private"
+            android:textSize="14sp" />
+
+        <LinearLayout
+            android:layout_width="119dp"
+            android:layout_height="75dp"
+            android:gravity="center_vertical"
+            android:orientation="horizontal"
+            android:paddingTop="10dp">
+
+            <TextView
+                android:id="@+id/recipeLikes"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:text="Comments"
-                android:textSize="18sp"
-                android:textStyle="bold"
-                android:paddingTop="10dp"/>
+                android:paddingEnd="10dp"
+                android:text="Likes: 1"
+                android:textSize="16sp" />
 
-            <LinearLayout
-                android:id="@+id/commentsContainer"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:orientation="vertical"/>
-
-            <EditText
-                android:id="@+id/commentInput"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:hint="Write a comment..."
-                android:layout_marginTop="10dp" />
-
-            <!-- Submit Comment Button -->
-            <Button
-                android:id="@+id/commentSubmit"
+            <ImageButton
+                android:id="@+id/btnLike"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:text="Submit Comment"
-                android:layout_marginTop="5dp" />
+                android:background="?attr/selectableItemBackgroundBorderless"
+                android:contentDescription="Like Button"
+                android:src="@drawable/ic_favorite_border" />
+        </LinearLayout>
+
+        <!-- Description -->
+
+        <!-- Comments Section -->
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Comments"
+            android:textSize="18sp"
+            android:textStyle="bold"
+            android:paddingTop="10dp"/>
+
+        <LinearLayout
+            android:id="@+id/commentsContainer"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"/>
+
+        <EditText
+            android:id="@+id/commentInput"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:hint="Write a comment..."
+            android:layout_marginTop="10dp" />
+
+        <!-- Submit Comment Button -->
+        <Button
+            android:id="@+id/commentSubmit"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Submit Comment"
+            android:layout_marginTop="5dp" />
+
+        <!-- Buttons Layout for Edit and Delete -->
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:gravity="center"
+            android:layout_marginTop="10dp">
 
             <!-- Edit Recipe -->
             <Button
@@ -151,23 +157,17 @@
                 android:layout_height="wrap_content"
                 android:text="Edit"
                 android:visibility="gone"
-                android:layout_below="@id/recipeLikes"
-                android:layout_marginTop="10dp"
-                android:layout_alignParentEnd="true"
-                android:layout_marginEnd="16dp"/>
+                android:layout_marginEnd="8dp"/>
 
             <!-- Delete Recipe -->
-
             <Button
                 android:id="@+id/btnDeleteRecipe"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:text="Delete Recipe"
-                android:layout_marginTop="16dp"
                 android:visibility="gone"/>
-
-
         </LinearLayout>
 
-</ScrollView>
+    </LinearLayout>
+</androidx.core.widget.NestedScrollView>
 

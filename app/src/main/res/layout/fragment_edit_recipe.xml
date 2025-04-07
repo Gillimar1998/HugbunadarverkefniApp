@@ -19,13 +19,13 @@
             android:paddingBottom="16dp" />
 
         <EditText
-            android:id="@+id/etRecipeName"
+            android:id="@+id/getRecipeName"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:hint="Name" />
 
         <EditText
-            android:id="@+id/etRecipeDescription"
+            android:id="@+id/getRecipeDescription"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:hint="Description"
@@ -34,13 +34,13 @@
             android:gravity="top" />
 
         <EditText
-            android:id="@+id/etRecipeCategory"
+            android:id="@+id/getRecipeCategory"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:hint="Category" />
 
         <EditText
-            android:id="@+id/etRecipeCookTime"
+            android:id="@+id/getRecipeCookTime"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:hint="Cook Time (minutes)"
