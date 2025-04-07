@@ -73,8 +73,14 @@ public interface RecipeApiService {
     @DELETE("/recipes/{recipeId}/comments/{commentId}")
     Call<Void> deleteComment(@Path("recipeId") long recipeId, @Path("commentId") long commentId);
 
-    @POST("comments/add/json")
-    Call<Comment> postCommentJson(@Body RequestBody body);
+    @Multipart
+    @POST("/comments/add")
+    Call<Comment> postCommentMultipart(
+            @Part("recipeId") RequestBody recipeId,
+            @Part("userId") RequestBody userId,
+            @Part("content") RequestBody content,
+            @Part MultipartBody.Part image  // can be null
+    );
 
 
 }

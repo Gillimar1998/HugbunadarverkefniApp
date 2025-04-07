@@ -31,6 +31,7 @@ import androidx.fragment.app.Fragment;
 import static android.app.Activity.RESULT_OK;
 
 
+import static com.example.hugbunadarverkefni.utils.FileUtils.getRealPathFromURI;
 
 import com.bumptech.glide.Glide;
 
@@ -42,6 +43,7 @@ import com.example.hugbunadarverkefni.api.UserApiService;
 import com.example.hugbunadarverkefni.model.Comment;
 import com.example.hugbunadarverkefni.model.Recipe;
 import com.example.hugbunadarverkefni.model.User;
+import com.example.hugbunadarverkefni.utils.FileUtils;
 
 import org.json.JSONObject;
 
@@ -55,6 +57,7 @@ import java.util.Objects;
 import java.util.Set;
 
 import okhttp3.MediaType;
+import okhttp3.MultipartBody;
 import okhttp3.RequestBody;
 import retrofit2.Call;
 import retrofit2.Callback;
@@ -74,6 +77,7 @@ public class RecipeViewFragment extends Fragment {
     private EditText commentInput;
     private ActivityResultLauncher<Intent> imagePickerLauncher;
     private Uri imageUri;
+
 
 
     @Override
@@ -273,26 +277,27 @@ public class RecipeViewFragment extends Fragment {
             return;
         }
 
-        JSONObject json = new JSONObject();
-        try {
-            json.put("recipeId", recipeId);
-            json.put("userId", userId);
-            json.put("content", content);
+        // Convert text to RequestBody
+        RequestBody recipeIdPart = RequestBody.create(MediaType.parse("text/plain"), String.valueOf(recipeId));
+        RequestBody userIdPart = RequestBody.create(MediaType.parse("text/plain"), String.valueOf(userId));
+        RequestBody contentPart = RequestBody.create(MediaType.parse("text/plain"), content);
 
-            if (imageUri != null) {
-                File copied = copyUriToFile(imageUri);
-                json.put("imagePath", copied.getAbsolutePath());
+        MultipartBody.Part imagePart = null;
+        if (imageUri != null) {
+            try {
+                File file = new File(getRealPathFromURI(requireContext(),imageUri));
+                RequestBody requestFile = RequestBody.create(MediaType.parse("image/*"), file);
+                imagePart = MultipartBody.Part.createFormData("image", file.getName(), requestFile);
+            } catch (Exception e) {
+                Toast.makeText(getContext(), "Failed to prepare image: " + e.getMessage(), Toast.LENGTH_SHORT).show();
+                return;
             }
-        } catch (Exception e) {
-            Toast.makeText(getContext(), "Error building comment JSON: " + e.getMessage(), Toast.LENGTH_SHORT).show();
-            return;
         }
 
-        MediaType mediaType = MediaType.get("application/json; charset=utf-8");
-        RequestBody requestBody = RequestBody.create(mediaType, json.toString());
-
         RecipeApiService apiService = RetrofitClient.getClient().create(RecipeApiService.class);
-        apiService.postCommentJson(requestBody).enqueue(new Callback<Comment>() {
+        Call<Comment> call = apiService.postCommentMultipart(recipeIdPart, userIdPart, contentPart, imagePart);
+
+        call.enqueue(new Callback<Comment>() {
             @Override
             public void onResponse(Call<Comment> call, Response<Comment> response) {
                 if (response.isSuccessful()) {
@@ -488,6 +493,7 @@ public class RecipeViewFragment extends Fragment {
         });
     }
 }
+
 
 
 
