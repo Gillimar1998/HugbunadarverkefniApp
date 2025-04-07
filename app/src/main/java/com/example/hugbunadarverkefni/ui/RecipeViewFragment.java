@@ -440,7 +440,8 @@ public class RecipeViewFragment extends Fragment {
                 }
                 long currentUserId = sharedPreferences.getLong("user_Id", -1);
 
-                if (comment.getUser().getId() == currentUserId || isAdmin) {
+                if (comment.getUser().getId() == currentUserId) {
+                    // 🔒 Regular user can edit & delete their own comment
                     LinearLayout buttonLayout = new LinearLayout(getContext());
                     buttonLayout.setOrientation(LinearLayout.HORIZONTAL);
 
@@ -455,6 +456,13 @@ public class RecipeViewFragment extends Fragment {
                     buttonLayout.addView(deleteButton);
 
                     commentLayout.addView(buttonLayout);
+
+                } else if (isAdmin) {
+                    // 🛡️ Admins can only delete
+                    Button deleteButton = new Button(getContext());
+                    deleteButton.setText("Delete");
+                    deleteButton.setOnClickListener(v -> confirmDeleteComment(comment.getId()));
+                    commentLayout.addView(deleteButton);
                 }
 
                 commentsContainer.addView(commentLayout);
