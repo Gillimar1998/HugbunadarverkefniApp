@@ -369,7 +369,7 @@ public class RecipeViewFragment extends Fragment {
 
         likesTextView.setText("Likes: " + recipe.getLikeCount());
 
-        if (recipe.getUser().getId() == userId || isAdmin) {
+        if (recipe.getUserId() == userId || isAdmin) {
             btnDeleteRecipe.setVisibility(View.VISIBLE);
             btnEditRecipe.setVisibility(View.VISIBLE);
 

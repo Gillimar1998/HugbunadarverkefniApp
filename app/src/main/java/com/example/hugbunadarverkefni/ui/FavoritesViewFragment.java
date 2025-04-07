@@ -4,6 +4,7 @@ import android.os.Bundle;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.graphics.Bitmap;
 
 import androidx.annotation.NonNull;
 import androidx.recyclerview.widget.LinearLayoutManager;
@@ -12,6 +13,7 @@ import com.example.hugbunadarverkefni.R;
 import com.example.hugbunadarverkefni.adapter.RecipeAdapter;
 
 import static android.content.Context.MODE_PRIVATE;
+
 
 import android.content.SharedPreferences;
 import android.os.Bundle;
@@ -29,8 +31,13 @@ import com.example.hugbunadarverkefni.adapter.RecipeAdapter;
 import com.example.hugbunadarverkefni.api.RecipeApiService;
 import com.example.hugbunadarverkefni.api.RetrofitClient;
 import com.example.hugbunadarverkefni.api.UserApiService;
+import com.example.hugbunadarverkefni.database.RecipeDao;
+import com.example.hugbunadarverkefni.database.RecipeDatabase;
+import com.example.hugbunadarverkefni.database.RecipeEntity;
 import com.example.hugbunadarverkefni.databinding.FragmentFavoritesViewBinding;
 import com.example.hugbunadarverkefni.databinding.FragmentRecipesViewBinding;
+import com.example.hugbunadarverkefni.model.Comment;
+import com.example.hugbunadarverkefni.model.Image;
 import com.example.hugbunadarverkefni.model.Recipe;
 import com.example.hugbunadarverkefni.model.User;
 import com.google.android.material.floatingactionbutton.FloatingActionButton;
@@ -46,6 +53,8 @@ public class FavoritesViewFragment extends Fragment {
     private List<Recipe> recipeList = new ArrayList<>();
     private RecipeAdapter recipeAdapter;
     private RecipeApiService recipeApiService;
+    private RecipeDao recipeDao;  // Room DAO for accessing recipes
+    private RecipeDatabase recipeDatabase;  // Room Database
 
     @Override
     public View onCreateView(@NonNull LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState) {
@@ -60,6 +69,10 @@ public class FavoritesViewFragment extends Fragment {
         // Initialize API service properly
         recipeApiService = RetrofitClient.getClient().create(RecipeApiService.class);
 
+        // Initialize Room Database and DAO
+        recipeDatabase = RecipeDatabase.getInstance(requireContext());
+        recipeDao = recipeDatabase.recipeDao();
+
         // Set up RecyclerView
         recipeAdapter = new RecipeAdapter(getContext(), recipeList, this::openRecipeDetails);
         binding.recyclerView.setLayoutManager(new LinearLayoutManager(getContext()));
@@ -68,6 +81,7 @@ public class FavoritesViewFragment extends Fragment {
         SharedPreferences sharedPreferences = requireActivity().getSharedPreferences("UserPrefs", MODE_PRIVATE);
         long userId = sharedPreferences.getLong("user_Id", -1);
 
+        recipeList.clear();
         getUserFavorites(userId);
     }
 
@@ -88,6 +102,8 @@ public class FavoritesViewFragment extends Fragment {
                             if (response.isSuccessful() && response.body() != null) {
                                 recipeList.add(response.body());
                                 recipeAdapter.notifyDataSetChanged(); // Refresh RecyclerView
+
+                                saveRecipeToLocalDatabase(response.body());
                             }
                         }
 
@@ -104,6 +120,52 @@ public class FavoritesViewFragment extends Fragment {
 
         }
     }
+
+    private void saveRecipeToLocalDatabase(Recipe recipe) {
+        // Get the image URL from the Image object in the Recipe class
+        Image image = recipe.getImage();
+        String imageUrl = null;
+
+        if (image != null) {
+            imageUrl = image.getUrl();
+        }
+
+        // Convert other fields from Recipe to RecipeEntity
+        Long id = recipe.getId();
+        String name = recipe.getName();
+        String description = recipe.getDescription();
+        String category = recipe.getCategory();
+        int cookTime = recipe.getCookTime();
+        boolean privatePost = recipe.isPrivatePost();
+        Long userId = recipe.getUserId();
+        int likeCount = recipe.getLikeCount();
+        Date creationDate = recipe.getCreationDate();
+        List<Long> likedUserIDs = recipe.getLikedUserIDs();
+        List<Comment> comments = recipe.getComments();
+
+        // Create RecipeEntity
+        RecipeEntity recipeEntity = new RecipeEntity(
+                id,
+                name,
+                description,
+                category,
+                cookTime,
+                privatePost,
+                userId,
+                likeCount,
+                imageUrl,
+                creationDate,
+                likedUserIDs,
+                comments
+        );
+        Log.d("LocalDatabase", "Recipe saved successfully with ID: " + recipeEntity.getId());
+
+
+        // Save to database in background thread
+        new Thread(() -> recipeDao.insertRecipe(recipeEntity)).start();
+    }
+
+
 
     private void openRecipeDetails(Recipe recipe) {
         Bundle bundle = new Bundle();
