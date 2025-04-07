@@ -4,10 +4,12 @@ import android.content.Context;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.ImageView;
 import android.widget.TextView;
 import androidx.annotation.NonNull;
 import androidx.recyclerview.widget.RecyclerView;
 
+import com.bumptech.glide.Glide;
 import com.example.hugbunadarverkefni.R;
 import com.example.hugbunadarverkefni.model.Recipe;
 
@@ -40,6 +42,17 @@ public class RecipeAdapter extends RecyclerView.Adapter<RecipeAdapter.ViewHolder
     public void onBindViewHolder(@NonNull ViewHolder holder, int position) {
         Recipe recipe = recipes.get(position);
         holder.title.setText(recipe.getName());
+        holder.author.setText("by " + recipe.getUser().getUsername());
+
+        // Load image with Glide (or show placeholder if null)
+        if (recipe.getImage() != null && recipe.getImage().getUrl() != null && !recipe.getImage().getUrl().isEmpty()) {
+            Glide.with(context)
+                    .load(recipe.getImage().getUrl())
+                    .placeholder(R.drawable.ic_placeholder_image)
+                    .into(holder.imageView);
+        } else {
+            holder.imageView.setImageResource(R.drawable.ic_placeholder_image);
+        }
 
         // Set click listener
         holder.itemView.setOnClickListener(v -> listener.onRecipeClick(recipe));
@@ -51,11 +64,14 @@ public class RecipeAdapter extends RecyclerView.Adapter<RecipeAdapter.ViewHolder
     }
 
     public static class ViewHolder extends RecyclerView.ViewHolder {
-        TextView title;
+        TextView title, author;
+        ImageView imageView;
 
         public ViewHolder(@NonNull View itemView) {
             super(itemView);
             title = itemView.findViewById(R.id.recipeTitle);
+            author = itemView.findViewById(R.id.recipeAuthor);
+            imageView = itemView.findViewById(R.id.recipeImage);
         }
     }
 }
