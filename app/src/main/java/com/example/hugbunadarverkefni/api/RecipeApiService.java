@@ -69,9 +69,6 @@ public interface RecipeApiService {
     @POST("/recipes/{id}/comments")
     Call<Comment> postComment(@Path("id") long recipeId, @Body Map<String, Object> body);
 
-    // DELETE a specific comment by ID
-    @DELETE("/recipes/{recipeId}/comments/{commentId}")
-    Call<Void> deleteComment(@Path("recipeId") long recipeId, @Path("commentId") long commentId);
 
     @Multipart
     @POST("/comments/add")
@@ -80,6 +77,21 @@ public interface RecipeApiService {
             @Part("userId") RequestBody userId,
             @Part("content") RequestBody content,
             @Part MultipartBody.Part image  // can be null
+    );
+
+    @Multipart
+    @PATCH("/comments/{id}")
+    Call<Comment> patchComment(
+            @Path("id") Long commentId,
+            @Part("userId") RequestBody userId,
+            @Part("content") RequestBody content,
+            @Part MultipartBody.Part image  // can be null
+    );
+
+    @DELETE("/comments/{id}")
+    Call<Void> deleteComment(
+            @Path("id") long commentId,
+            @Query("userId") long userId
     );
 
 
