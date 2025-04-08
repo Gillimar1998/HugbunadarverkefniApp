@@ -49,4 +49,8 @@ public class User {
 
     public Set<String> getFavorites(){ return favorites; }
     public void setFavorites(Set<String> favorites){ this.favorites = favorites; }
+
+    public void setId(Long userId) {
+
+    }
 }
