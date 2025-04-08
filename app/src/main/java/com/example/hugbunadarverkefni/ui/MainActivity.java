@@ -59,6 +59,7 @@ public class MainActivity extends AppCompatActivity {
         // Find views by ID
         MaterialToolbar toolbar = findViewById(R.id.toolbar);
         setSupportActionBar(toolbar);
+        getSupportActionBar().setDisplayShowTitleEnabled(false);
 
         /*
         FloatingActionButton fab = findViewById(R.id.fab);

@@ -16,7 +16,20 @@
         <com.google.android.material.appbar.MaterialToolbar
             android:id="@+id/toolbar"
             android:layout_width="match_parent"
-            android:layout_height="?attr/actionBarSize" />
+            android:layout_height="?attr/actionBarSize"
+            app:title=""/>
+
+        <!-- Logo ImageView -->
+        <ImageView
+            android:id="@+id/appLogo"
+            android:layout_width="match_parent"
+            android:layout_height="80dp"
+            android:scaleType="centerInside"
+            android:layout_gravity="center"
+            android:adjustViewBounds="true"
+            android:src="@drawable/foodimagezoomed"
+            android:background="@android:color/transparent"
+            android:contentDescription="App Logo" />
     </com.google.android.material.appbar.AppBarLayout>
 
     <!-- Include the NavHost layout -->

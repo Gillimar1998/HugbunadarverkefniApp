@@ -26,6 +26,8 @@ android:layout_height="match_parent">
             android:id="@+id/searchButton"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
+            android:backgroundTint="#6A2C0F"
+            android:textColor="#FFFFFF"
             android:text="Search"/>
     </LinearLayout>
 
@@ -95,8 +97,9 @@ android:layout_height="match_parent">
         android:id="@+id/btnAccountSettings"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
+        android:backgroundTint="#6A2C0F"
+        android:textColor="#FFFFFF"
         android:text="Edit Account"
-        android:textColor="@android:color/white"
         android:layout_alignParentBottom="true"
         android:layout_alignParentEnd="true"
         android:layout_marginEnd="16dp"

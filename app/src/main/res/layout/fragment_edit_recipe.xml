@@ -50,6 +50,8 @@
             android:id="@+id/btnSelectImage"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
+            android:backgroundTint="#6A2C0F"
+            android:textColor="#FFFFFF"
             android:text="Select Image"
             android:layout_marginTop="16dp" />
 
@@ -65,6 +67,8 @@
             android:id="@+id/btnSaveChanges"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
+            android:backgroundTint="#6A2C0F"
+            android:textColor="#FFFFFF"
             android:text="Save Changes"
             android:layout_marginTop="24dp" />
     </LinearLayout>

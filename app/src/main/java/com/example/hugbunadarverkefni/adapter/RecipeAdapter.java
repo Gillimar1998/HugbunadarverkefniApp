@@ -48,10 +48,10 @@ public class RecipeAdapter extends RecyclerView.Adapter<RecipeAdapter.ViewHolder
         if (recipe.getImage() != null && recipe.getImage().getUrl() != null && !recipe.getImage().getUrl().isEmpty()) {
             Glide.with(context)
                     .load(recipe.getImage().getUrl())
-                    .placeholder(R.drawable.ic_placeholder_image)
+                    .placeholder(R.drawable.foodimage)
                     .into(holder.imageView);
         } else {
-            holder.imageView.setImageResource(R.drawable.ic_placeholder_image);
+            holder.imageView.setImageResource(R.drawable.foodimage);
         }
 
         // Set click listener
