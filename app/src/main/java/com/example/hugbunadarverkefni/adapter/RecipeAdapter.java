@@ -63,6 +63,11 @@ public class RecipeAdapter extends RecyclerView.Adapter<RecipeAdapter.ViewHolder
         return recipes.size();
     }
 
+    public void setRecipes(List<Recipe> newRecipes) {
+        this.recipes = newRecipes;
+        notifyDataSetChanged(); // This refreshes the RecyclerView
+    }
+
     public static class ViewHolder extends RecyclerView.ViewHolder {
         TextView title, author;
         ImageView imageView;

@@ -6,11 +6,10 @@ import androidx.room.Query;
 import androidx.room.Delete;
 import androidx.room.OnConflictStrategy;
 
+import java.util.Collection;
 import java.util.List;
 
-import com.example.hugbunadarverkefni.database.RecipeEntity;
-
-import java.util.List;
+import com.example.hugbunadarverkefni.model.Recipe;
 
 @Dao
 public interface RecipeDao {

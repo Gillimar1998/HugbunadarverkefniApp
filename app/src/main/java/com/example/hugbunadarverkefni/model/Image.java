@@ -28,6 +28,9 @@ public class Image implements Serializable { // Implements Serializable
     public Long getId() { return id; }
     public String getName() { return name; }
     public String getUrl() { return url; }
+    public void setUrl(String url){
+        this.url = url;
+    }
     public boolean isDeleted() { return deleted; }
 
     public void loadImage(Context context, ImageView imageView) {
