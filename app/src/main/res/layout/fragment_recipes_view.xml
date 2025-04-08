@@ -75,7 +75,9 @@ android:layout_height="match_parent">
         android:layout_width="match_parent"
         android:layout_height="0dp"
         android:layout_below="@id/categoryScrollView"
-        android:layout_above="@id/fabAddRecipe"/>
+        android:layout_above="@id/fabAddRecipe"
+        android:padding="8dp"
+        android:clipToPadding="false"/>
 
     <!-- Floating Action Button for adding a new recipe -->
     <com.google.android.material.floatingactionbutton.FloatingActionButton
