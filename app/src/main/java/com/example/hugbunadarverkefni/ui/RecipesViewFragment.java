@@ -105,7 +105,7 @@ public class RecipesViewFragment extends Fragment {
 
 
 
-        Button accountSettingsButton = view.findViewById(R.id.btnAccountSettings);
+        FloatingActionButton accountSettingsButton = view.findViewById(R.id.btnAccountSettings);
         accountSettingsButton.setOnClickListener(v ->
                 NavHostFragment.findNavController(this)
                         .navigate(R.id.action_RecipesViewFragment_to_AccountSettingsFragment)
