@@ -31,7 +31,6 @@ import androidx.fragment.app.Fragment;
 import static android.app.Activity.RESULT_OK;
 
 
-import static com.example.hugbunadarverkefni.utils.FileUtils.getRealPathFromURI;
 
 import com.bumptech.glide.Glide;
 
@@ -43,7 +42,6 @@ import com.example.hugbunadarverkefni.api.UserApiService;
 import com.example.hugbunadarverkefni.model.Comment;
 import com.example.hugbunadarverkefni.model.Recipe;
 import com.example.hugbunadarverkefni.model.User;
-import com.example.hugbunadarverkefni.utils.FileUtils;
 
 import org.json.JSONObject;
 
@@ -77,11 +75,6 @@ public class RecipeViewFragment extends Fragment {
     private EditText commentInput;
     private ActivityResultLauncher<Intent> imagePickerLauncher;
     private Uri imageUri;
-
-    private boolean isEditingComment = false;
-    private Uri editSelectedImageUri = null;
-    private ImageView currentEditImagePreview = null; // assigned in edit dialog
-
 
 
     @Override
@@ -133,30 +126,14 @@ public class RecipeViewFragment extends Fragment {
                                     selectedImage,
                                     Intent.FLAG_GRANT_READ_URI_PERMISSION
                             );
-
-                            if (isEditingComment) {
-                                editSelectedImageUri = selectedImage;
-                                if (currentEditImagePreview != null) {
-                                    currentEditImagePreview.setImageURI(editSelectedImageUri);
-                                    currentEditImagePreview.setVisibility(View.VISIBLE);
-                                }
-                            } else {
-                                imageUri = selectedImage;
-                                commentImagePreview.setImageURI(imageUri);
-                                commentImagePreview.setVisibility(View.VISIBLE);
-                            }
+                            imageUri = selectedImage;
+                            commentImagePreview.setVisibility(View.VISIBLE);
+                            commentImagePreview.setImageURI(imageUri);
                         }
                     } else {
-                        if (isEditingComment) {
-                            editSelectedImageUri = null;
-                            if (currentEditImagePreview != null) {
-                                currentEditImagePreview.setVisibility(View.GONE);
-                            }
-                        } else {
-                            imageUri = null;
-                            commentImagePreview.setVisibility(View.GONE);
-                            Toast.makeText(getContext(), "No image selected", Toast.LENGTH_SHORT).show();
-                        }
+                        imageUri = null;
+                        commentImagePreview.setVisibility(View.GONE);
+                        Toast.makeText(getContext(), "No image selected", Toast.LENGTH_SHORT).show();
                     }
                 }
         );
@@ -297,27 +274,27 @@ public class RecipeViewFragment extends Fragment {
             return;
         }
 
-        // Convert text to RequestBody
-        RequestBody recipeIdPart = RequestBody.create(MediaType.parse("text/plain"), String.valueOf(recipeId));
-        RequestBody userIdPart = RequestBody.create(MediaType.parse("text/plain"), String.valueOf(userId));
-        RequestBody contentPart = RequestBody.create(MediaType.parse("text/plain"), content);
+        // Wrap text values as RequestBody
+        RequestBody recipeIdBody = RequestBody.create(MediaType.parse("text/plain"), String.valueOf(recipeId));
+        RequestBody userIdBody = RequestBody.create(MediaType.parse("text/plain"), String.valueOf(userId));
+        RequestBody contentBody = RequestBody.create(MediaType.parse("text/plain"), content);
 
+        // Optional image part
         MultipartBody.Part imagePart = null;
         if (imageUri != null) {
             try {
-                File file = new File(getRealPathFromURI(requireContext(),imageUri));
-                RequestBody requestFile = RequestBody.create(MediaType.parse("image/*"), file);
-                imagePart = MultipartBody.Part.createFormData("image", file.getName(), requestFile);
-            } catch (Exception e) {
-                Toast.makeText(getContext(), "Failed to prepare image: " + e.getMessage(), Toast.LENGTH_SHORT).show();
+                File file = copyUriToFile(imageUri);
+                RequestBody fileReqBody = RequestBody.create(MediaType.parse("image/*"), file);
+                imagePart = MultipartBody.Part.createFormData("image", file.getName(), fileReqBody);
+            } catch (IOException e) {
+                Toast.makeText(getContext(), "Failed to process image: " + e.getMessage(), Toast.LENGTH_SHORT).show();
                 return;
             }
         }
 
+        // Make the API call
         RecipeApiService apiService = RetrofitClient.getClient().create(RecipeApiService.class);
-        Call<Comment> call = apiService.postCommentMultipart(recipeIdPart, userIdPart, contentPart, imagePart);
-
-        call.enqueue(new Callback<Comment>() {
+        apiService.postCommentMultipart(recipeIdBody, userIdBody, contentBody, imagePart).enqueue(new Callback<Comment>() {
             @Override
             public void onResponse(Call<Comment> call, Response<Comment> response) {
                 if (response.isSuccessful()) {
@@ -335,6 +312,7 @@ public class RecipeViewFragment extends Fragment {
             }
         });
     }
+
 
 
 
@@ -438,32 +416,6 @@ public class RecipeViewFragment extends Fragment {
 
                     commentLayout.addView(commentImageView);
                 }
-                long currentUserId = sharedPreferences.getLong("user_Id", -1);
-
-                if (comment.getUser().getId() == currentUserId) {
-                    // 🔒 Regular user can edit & delete their own comment
-                    LinearLayout buttonLayout = new LinearLayout(getContext());
-                    buttonLayout.setOrientation(LinearLayout.HORIZONTAL);
-
-                    Button editButton = new Button(getContext());
-                    editButton.setText("Edit");
-                    editButton.setOnClickListener(v -> showEditCommentDialog(comment));
-                    buttonLayout.addView(editButton);
-
-                    Button deleteButton = new Button(getContext());
-                    deleteButton.setText("Delete");
-                    deleteButton.setOnClickListener(v -> confirmDeleteComment(comment.getId()));
-                    buttonLayout.addView(deleteButton);
-
-                    commentLayout.addView(buttonLayout);
-
-                } else if (isAdmin) {
-                    // 🛡️ Admins can only delete
-                    Button deleteButton = new Button(getContext());
-                    deleteButton.setText("Delete");
-                    deleteButton.setOnClickListener(v -> confirmDeleteComment(comment.getId()));
-                    commentLayout.addView(deleteButton);
-                }
 
                 commentsContainer.addView(commentLayout);
             }
@@ -477,23 +429,19 @@ public class RecipeViewFragment extends Fragment {
     }
 
     private void deleteComment(long commentId) {
-        long userId = requireActivity().getSharedPreferences("UserPrefs", MODE_PRIVATE).getLong("user_Id", -1);
         RecipeApiService apiService = RetrofitClient.getClient().create(RecipeApiService.class);
-
-        apiService.deleteComment(commentId, userId).enqueue(new Callback<Void>() {
+        apiService.deleteComment(recipeId, commentId).enqueue(new Callback<Void>() {
             @Override
             public void onResponse(Call<Void> call, Response<Void> response) {
                 if (response.isSuccessful()) {
                     Toast.makeText(getContext(), "Comment deleted", Toast.LENGTH_SHORT).show();
-                    fetchRecipeDetails(recipeId); // Refresh comments
-                } else {
-                    Toast.makeText(getContext(), "Failed to delete comment", Toast.LENGTH_SHORT).show();
+                    fetchRecipeDetails(recipeId);
                 }
             }
 
             @Override
             public void onFailure(Call<Void> call, Throwable t) {
-                Toast.makeText(getContext(), "Network error: " + t.getMessage(), Toast.LENGTH_SHORT).show();
+                Toast.makeText(getContext(), "Error: " + t.getMessage(), Toast.LENGTH_SHORT).show();
             }
         });
     }
@@ -542,96 +490,7 @@ public class RecipeViewFragment extends Fragment {
             }
         });
     }
-    private void showEditCommentDialog(Comment comment) {
-        AlertDialog.Builder builder = new AlertDialog.Builder(getContext());
-        builder.setTitle("Edit Comment");
-
-        View dialogView = LayoutInflater.from(getContext()).inflate(R.layout.dialog_edit_comment, null);
-        EditText editCommentInput = dialogView.findViewById(R.id.editCommentInput);
-        ImageView editImagePreview = dialogView.findViewById(R.id.editCommentImagePreview);
-        Button selectImageButton = dialogView.findViewById(R.id.btnSelectEditImage);
-
-        editCommentInput.setText(comment.getContent());
-
-        final Uri[] selectedImageUri = {null};
-
-        isEditingComment = true;
-        currentEditImagePreview = dialogView.findViewById(R.id.editCommentImagePreview);
-
-        selectImageButton.setOnClickListener(v -> {
-            Intent intent = new Intent(Intent.ACTION_OPEN_DOCUMENT);
-            intent.setType("image/*");
-            intent.addCategory(Intent.CATEGORY_OPENABLE);
-            imagePickerLauncher.launch(intent);
-        });
-
-        builder.setView(dialogView);
-        builder.setPositiveButton("Update", (dialog, which) -> {
-            String updatedContent = editCommentInput.getText().toString().trim();
-
-            // Build and send PATCH request with multipart/form-data (just like submitComment)
-            patchComment(comment.getId(), updatedContent, editSelectedImageUri);
-            isEditingComment = false;
-        });
-
-        builder.setNegativeButton("Cancel", (dialog, which) -> {
-                    isEditingComment = false;
-                });
-        builder.show();
-    }
-
-    private void confirmDeleteComment(long commentId) {
-        new AlertDialog.Builder(getContext())
-                .setTitle("Delete Comment")
-                .setMessage("Are you sure you want to delete this comment?")
-                .setPositiveButton("Yes", (dialog, which) -> deleteComment(commentId))
-                .setNegativeButton("Cancel", null)
-                .show();
-    }
-    private void patchComment(long commentId, String content, Uri imageUri) {
-        long userId = requireActivity().getSharedPreferences("UserPrefs", MODE_PRIVATE).getLong("user_Id", -1);
-        if (userId == -1) {
-            Toast.makeText(getContext(), "User not logged in", Toast.LENGTH_SHORT).show();
-            return;
-        }
-
-        RequestBody userIdPart = RequestBody.create(MediaType.parse("text/plain"), String.valueOf(userId));
-        RequestBody contentPart = RequestBody.create(MediaType.parse("text/plain"), content);
-
-        MultipartBody.Part imagePart = null;
-        if (imageUri != null) {
-            try {
-                File imageFile = new File(FileUtils.getRealPathFromURI(requireContext(), imageUri));
-                RequestBody imageRequest = RequestBody.create(MediaType.parse("image/*"), imageFile);
-                imagePart = MultipartBody.Part.createFormData("image", imageFile.getName(), imageRequest);
-            } catch (Exception e) {
-                Toast.makeText(getContext(), "Image upload failed: " + e.getMessage(), Toast.LENGTH_SHORT).show();
-                return;
-            }
-        }
-
-        RecipeApiService apiService = RetrofitClient.getClient().create(RecipeApiService.class);
-        apiService.patchComment(commentId, userIdPart, contentPart, imagePart).enqueue(new Callback<Comment>() {
-            @Override
-            public void onResponse(Call<Comment> call, Response<Comment> response) {
-                if (response.isSuccessful()) {
-                    Toast.makeText(getContext(), "Comment updated!", Toast.LENGTH_SHORT).show();
-                    fetchRecipeDetails(recipeId); // Refresh UI
-                } else {
-                    Toast.makeText(getContext(), "Failed to update comment", Toast.LENGTH_SHORT).show();
-                }
-            }
-
-            @Override
-            public void onFailure(Call<Comment> call, Throwable t) {
-                Toast.makeText(getContext(), "Network error: " + t.getMessage(), Toast.LENGTH_SHORT).show();
-            }
-        });
-    }
-
-
 }
-
 
 
 

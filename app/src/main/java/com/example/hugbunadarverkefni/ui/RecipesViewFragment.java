@@ -12,6 +12,7 @@ import android.widget.*;
 import androidx.annotation.NonNull;
 import androidx.fragment.app.Fragment;
 import androidx.navigation.fragment.NavHostFragment;
+import androidx.recyclerview.widget.GridLayoutManager;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import com.example.hugbunadarverkefni.R;
 import com.example.hugbunadarverkefni.adapter.RecipeAdapter;
@@ -53,7 +54,7 @@ public class RecipesViewFragment extends Fragment {
 
         // Setup RecyclerView
         recipeAdapter = new RecipeAdapter(getContext(), recipeList, this::openRecipeDetails);
-        binding.recyclerView.setLayoutManager(new LinearLayoutManager(getContext()));
+        binding.recyclerView.setLayoutManager(new GridLayoutManager(getContext(), 2));
         binding.recyclerView.setAdapter(recipeAdapter);
 
         // Initialize UI elements
@@ -104,7 +105,7 @@ public class RecipesViewFragment extends Fragment {
 
 
 
-        Button accountSettingsButton = view.findViewById(R.id.btnAccountSettings);
+        FloatingActionButton accountSettingsButton = view.findViewById(R.id.btnAccountSettings);
         accountSettingsButton.setOnClickListener(v ->
                 NavHostFragment.findNavController(this)
                         .navigate(R.id.action_RecipesViewFragment_to_AccountSettingsFragment)
