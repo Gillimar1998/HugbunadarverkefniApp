@@ -3,7 +3,7 @@ package com.example.hugbunadarverkefni.ui;
 import static android.app.Activity.RESULT_OK;
 import static android.content.Context.MODE_PRIVATE;
 
-import static com.google.gson.internal.$Gson$Types.arrayOf;
+
 
 import android.Manifest;
 import android.content.Context;
@@ -24,23 +24,24 @@ import android.widget.Button;
 import android.widget.ImageView;
 import android.widget.Toast;
 
+import androidx.activity.result.ActivityResultLauncher;
+import androidx.activity.result.contract.ActivityResultContracts;
 import androidx.annotation.NonNull;
 import androidx.core.app.ActivityCompat;
 import androidx.core.content.ContextCompat;
+import androidx.core.content.FileProvider;
 import androidx.fragment.app.Fragment;
 import androidx.navigation.fragment.NavHostFragment;
-import androidx.recyclerview.widget.LinearLayoutManager;
 import com.example.hugbunadarverkefni.R;
-import com.example.hugbunadarverkefni.adapter.RecipeAdapter;
 import com.example.hugbunadarverkefni.api.RecipeApiService;
 import com.example.hugbunadarverkefni.api.RetrofitClient;
 import com.example.hugbunadarverkefni.api.UserApiService;
 import com.example.hugbunadarverkefni.databinding.FragmentAddRecipeBinding;
-import com.example.hugbunadarverkefni.databinding.FragmentRecipesViewBinding;
 import com.example.hugbunadarverkefni.model.Recipe;
 import com.example.hugbunadarverkefni.model.User;
 
 import java.io.FileOutputStream;
+import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.util.ArrayList;
@@ -56,11 +57,14 @@ import retrofit2.Response;
 
 public class AddRecipeFragment extends Fragment {
     private FragmentAddRecipeBinding binding;
-    private static final int PICK_IMAGE_REQUEST = 1;
     private Uri imageUri;
     private ImageView recipeImagePreview;
     private boolean private_post = false;
     private static final int STORAGE_PERMISSION_CODE = 100;
+
+    private ActivityResultLauncher<Intent> imagePickerLauncher;
+    private Uri cameraImageUri;
+
 
     @Override
     public View onCreateView(@NonNull LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState) {
@@ -71,6 +75,35 @@ public class AddRecipeFragment extends Fragment {
     @Override
     public void onViewCreated(@NonNull View view, Bundle savedInstanceState) {
         super.onViewCreated(view, savedInstanceState);
+
+        imagePickerLauncher = registerForActivityResult(
+                new ActivityResultContracts.StartActivityForResult(),
+                result -> {
+                    if (result.getResultCode() == RESULT_OK) {
+                        Uri selectedImage = null;
+
+                        if (result.getData() != null && result.getData().getData() != null) {
+                            // 📸 Gallery selected
+                            selectedImage = result.getData().getData();
+                            requireContext().getContentResolver().takePersistableUriPermission(
+                                    selectedImage, Intent.FLAG_GRANT_READ_URI_PERMISSION
+                            );
+                            Log.d("RecipeUpload", "✅ Selected from gallery: " + selectedImage);
+                        } else {
+                            // 📷 Camera image was saved to our FileProvider URI
+                            selectedImage = cameraImageUri;
+                            Log.d("RecipeUpload", "✅ Taken from camera: " + selectedImage);
+                        }
+
+                        if (selectedImage != null) {
+                            imageUri = selectedImage;
+                            previewImage(imageUri);
+                        }
+                    }
+                }
+        );
+
+
 
         // Get reference to the ImageView where the image will be displayed
         recipeImagePreview = view.findViewById(R.id.recipeImage);
@@ -154,20 +187,42 @@ public class AddRecipeFragment extends Fragment {
                         // Handle image if available
                         MultipartBody.Part imagePart = null;
                         if (imageUri != null) {
-                            File imageFile = new File(getRealPathFromURI(imageUri));
-                            if (imageFile.exists()) { // Ensure the file exists
+                            try {
+                                File imageFile = copyUriToFile(imageUri);
                                 RequestBody requestBody = RequestBody.create(MediaType.parse("image/*"), imageFile);
                                 imagePart = MultipartBody.Part.createFormData("image", imageFile.getName(), requestBody);
+                                Log.d("RecipeUpload", "✅ Copied image for upload: " + imageFile.getAbsolutePath());
+                            } catch (IOException e) {
+                                e.printStackTrace();
+                                Toast.makeText(getContext(), "Failed to process image", Toast.LENGTH_SHORT).show();
+                                return;
                             }
                         }
 
+
                         // Make the API call to add the recipe
+
+                        if (imagePart != null) {
+                            try {
+                                Log.d("RecipeUpload", "✅ Image is ready for upload: " + imagePart.body().contentLength());
+                            } catch (IOException e) {
+                                throw new RuntimeException(e);
+                            }
+                        } else {
+                            Log.d("RecipeUpload", "❌ Image part is null");
+                        }
                         RecipeApiService apiService = RetrofitClient.getClient().create(RecipeApiService.class);
                         Call<Recipe> callRecipe = apiService.addRecipe(namePart, descriptionPart, categoryPart, cookTimePart, userIdPart, privatePart, imagePart);
 
                         callRecipe.enqueue(new Callback<Recipe>() {
                             @Override
                             public void onResponse(Call<Recipe> call, Response<Recipe> response) {
+                                Recipe uploadedRecipe = response.body();
+                                if (uploadedRecipe != null) {
+                                    Log.d("RecipeUpload", "Recipe title: " + uploadedRecipe.getName());
+                                    Log.d("RecipeUpload", "Image URL: " +
+                                            (uploadedRecipe.getImage() != null ? uploadedRecipe.getImage().getUrl() : "No image"));
+                                }
                                 if (response.isSuccessful()) {
                                     Toast.makeText(getContext(), "Recipe added!", Toast.LENGTH_SHORT).show();
                                     NavHostFragment.findNavController(AddRecipeFragment.this).navigateUp(); // Go back
@@ -198,43 +253,30 @@ public class AddRecipeFragment extends Fragment {
     }
 
     private void openImageChooser() {
-        if (ContextCompat.checkSelfPermission(requireContext(), Manifest.permission.READ_MEDIA_IMAGES) != PackageManager.PERMISSION_GRANTED &&
-                ContextCompat.checkSelfPermission(requireContext(), Manifest.permission.READ_EXTERNAL_STORAGE) != PackageManager.PERMISSION_GRANTED) {
+        Intent galleryIntent = new Intent(Intent.ACTION_OPEN_DOCUMENT);
+        galleryIntent.setType("image/*");
+        galleryIntent.addCategory(Intent.CATEGORY_OPENABLE);
 
-            ActivityCompat.requestPermissions(requireActivity(),
-                    new String[]{Manifest.permission.READ_MEDIA_IMAGES, Manifest.permission.READ_EXTERNAL_STORAGE},
-                    STORAGE_PERMISSION_CODE);
-        } else {
-            pickImageFromGallery();
-        }
+        Intent cameraIntent = new Intent(MediaStore.ACTION_IMAGE_CAPTURE);
+
+        // Create a temporary file for the photo
+        File imageFile = new File(requireContext().getCacheDir(), "camera_image.jpg");
+
+        cameraImageUri = FileProvider.getUriForFile(
+                requireContext(),
+                requireContext().getPackageName() + ".fileprovider",
+                imageFile
+        );
+        cameraIntent.putExtra(MediaStore.EXTRA_OUTPUT, cameraImageUri);
+
+        // Combine intents
+        Intent chooser = Intent.createChooser(galleryIntent, "Select or take a picture");
+        chooser.putExtra(Intent.EXTRA_INITIAL_INTENTS, new Intent[]{cameraIntent});
+
+        imagePickerLauncher.launch(chooser);
     }
 
-    private void pickImageFromGallery() {
-        Intent intent = new Intent(Intent.ACTION_PICK, MediaStore.Images.Media.EXTERNAL_CONTENT_URI);
-        intent.setType("image/*");
-        startActivityForResult(intent, PICK_IMAGE_REQUEST);
-    }
 
-    @Override
-    public void onRequestPermissionsResult(int requestCode, @NonNull String[] permissions, @NonNull int[] grantResults) {
-        super.onRequestPermissionsResult(requestCode, permissions, grantResults);
-        if (requestCode == STORAGE_PERMISSION_CODE) {
-            if (grantResults.length > 0 && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
-                pickImageFromGallery();
-            } else {
-                Toast.makeText(getContext(), "Permission denied. Cannot select image.", Toast.LENGTH_SHORT).show();
-            }
-        }
-    }
-
-    @Override
-    public void onActivityResult(int requestCode, int resultCode, Intent data) {
-        super.onActivityResult(requestCode, resultCode, data);
-        if (requestCode == PICK_IMAGE_REQUEST && resultCode == RESULT_OK && data != null && data.getData() != null) {
-            imageUri = data.getData();
-            previewImage(imageUri);
-        }
-    }
 
     private void previewImage(Uri imageUri) {
         // Check if imageUri is null before setting it
@@ -246,38 +288,19 @@ public class AddRecipeFragment extends Fragment {
         }
     }
 
-    private String getRealPathFromURI(Uri uri) {
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
-            try (Cursor cursor = requireContext().getContentResolver().query(uri, null, null, null, null)) {
-                if (cursor != null && cursor.moveToFirst()) {
-                    int index = cursor.getColumnIndex(OpenableColumns.DISPLAY_NAME);
-                    if (index != -1) {
-                        String fileName = cursor.getString(index);
-                        File file = new File(requireContext().getCacheDir(), fileName);
-                        try (InputStream inputStream = requireContext().getContentResolver().openInputStream(uri);
-                             OutputStream outputStream = new FileOutputStream(file)) {
-                            byte[] buffer = new byte[1024];
-                            int length;
-                            while ((length = inputStream.read(buffer)) > 0) {
-                                outputStream.write(buffer, 0, length);
-                            }
-                            return file.getAbsolutePath();
-                        }
-                    }
-                }
-            } catch (Exception e) {
-                e.printStackTrace();
-            }
-        } else {
-            String[] proj = {MediaStore.Images.Media.DATA};
-            try (Cursor cursor = requireActivity().getContentResolver().query(uri, proj, null, null, null)) {
-                if (cursor != null && cursor.moveToFirst()) {
-                    int columnIndex = cursor.getColumnIndexOrThrow(MediaStore.Images.Media.DATA);
-                    return cursor.getString(columnIndex);
-                }
+    private File copyUriToFile(Uri uri) throws IOException {
+        File tempFile = new File(requireContext().getCacheDir(), "temp_recipe_image.jpg");
+
+        try (InputStream in = requireContext().getContentResolver().openInputStream(uri);
+             OutputStream out = new FileOutputStream(tempFile)) {
+
+            byte[] buffer = new byte[1024];
+            int length;
+            while ((length = in.read(buffer)) > 0) {
+                out.write(buffer, 0, length);
             }
         }
-        return null;
+        return tempFile;
     }
 
 

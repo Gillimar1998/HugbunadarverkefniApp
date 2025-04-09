@@ -49,6 +49,8 @@
     <string name="title_activity_registry">RegistryActivity</string>
     <string name="recipes_View_Fragment">Recipes</string>
     <string name="toggle_private_post">Toggle private post</string>
+    <string name="add_image">add image</string>
+    <string name="send_comment">Send Comment</string>
 
     <!-- sort options -->
     <string-array name="sort_options">
