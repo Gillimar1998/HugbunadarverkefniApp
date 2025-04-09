@@ -7,6 +7,7 @@ import androidx.room.Entity;
 import androidx.room.PrimaryKey;
 import androidx.room.TypeConverters;
 import com.example.hugbunadarverkefni.model.Comment;
+import com.example.hugbunadarverkefni.model.Recipe;
 import com.example.hugbunadarverkefni.model.User;
 
 import java.io.Serializable;
@@ -15,7 +16,7 @@ import java.util.List;
 
 @Entity(tableName = "recipes")
 @TypeConverters({Converters.class})
-public class RecipeEntity {
+public class RecipeEntity{
 
     @PrimaryKey(autoGenerate = true)
     private Long id;
