@@ -63,7 +63,7 @@ import retrofit2.Response;
 
 public class RecipeViewFragment extends Fragment {
 
-    private TextView titleTextView, categoryTextView, cookTimeTextView, descriptionTextView, likesTextView, recipePrivate;
+    private TextView titleTextView, categoryTextView, cookTimeTextView, descriptionTextView, likesTextView;
     private ImageView recipeImageView, commentImagePreview;
     private LinearLayout commentsContainer;
     private SharedPreferences sharedPreferences;
@@ -86,7 +86,6 @@ public class RecipeViewFragment extends Fragment {
         categoryTextView = view.findViewById(R.id.recipeCategory);
         cookTimeTextView = view.findViewById(R.id.recipeCookTime);
         descriptionTextView = view.findViewById(R.id.recipeDescription);
-        recipePrivate = view.findViewById(R.id.recipePrivate);
         likesTextView = view.findViewById(R.id.recipeLikes);
         recipeImageView = view.findViewById(R.id.ivRecipeImage); // ImageView for recipe image
         commentsContainer = view.findViewById(R.id.commentsContainer);
@@ -346,7 +345,6 @@ public class RecipeViewFragment extends Fragment {
         cookTimeTextView.setText("Duration: " + recipe.getCookTime() + " min");
         descriptionTextView.setText("Description: " + recipe.getDescription());
         likesTextView.setText("Likes: " + recipe.getLikeCount());
-        recipePrivate.setText("PostPrivate :" + recipe.isPrivatePost());
 
         // Handle ImageView visibility
         if (recipe.getImage() != null && recipe.getImage().getUrl() != null && !recipe.getImage().getUrl().isEmpty()) {
@@ -363,12 +361,6 @@ public class RecipeViewFragment extends Fragment {
         SharedPreferences sharedPreferences = requireActivity().getSharedPreferences("UserPrefs", MODE_PRIVATE);
         userId = sharedPreferences.getLong("user_Id", -1);
         boolean isAdmin = sharedPreferences.getBoolean("isAdmin", false);
-
-        if (isAdmin){
-            recipePrivate.setVisibility(View.VISIBLE);
-        } else {
-            recipePrivate.setVisibility(View.INVISIBLE);
-        }
 
         likesTextView.setText("Likes: " + recipe.getLikeCount());
 
