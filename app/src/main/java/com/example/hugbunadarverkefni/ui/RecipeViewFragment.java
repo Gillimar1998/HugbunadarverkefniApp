@@ -39,11 +39,7 @@ import com.example.hugbunadarverkefni.R;
 import com.example.hugbunadarverkefni.api.RecipeApiService;
 import com.example.hugbunadarverkefni.api.RetrofitClient;
 import com.example.hugbunadarverkefni.api.UserApiService;
-import com.example.hugbunadarverkefni.database.RecipeDao;
-import com.example.hugbunadarverkefni.database.RecipeDatabase;
-import com.example.hugbunadarverkefni.database.RecipeEntity;
 import com.example.hugbunadarverkefni.model.Comment;
-import com.example.hugbunadarverkefni.model.Image;
 import com.example.hugbunadarverkefni.model.Recipe;
 import com.example.hugbunadarverkefni.model.User;
 
@@ -51,7 +47,6 @@ import org.json.JSONObject;
 
 import java.io.*;
 import java.io.IOException;
-import java.util.Date;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -60,6 +55,7 @@ import java.util.Objects;
 import java.util.Set;
 
 import okhttp3.MediaType;
+import okhttp3.MultipartBody;
 import okhttp3.RequestBody;
 import retrofit2.Call;
 import retrofit2.Callback;
@@ -67,14 +63,11 @@ import retrofit2.Response;
 
 public class RecipeViewFragment extends Fragment {
 
-    private TextView titleTextView, categoryTextView, cookTimeTextView, descriptionTextView, likesTextView, recipePrivate;
+    private TextView titleTextView, categoryTextView, cookTimeTextView, descriptionTextView, likesTextView;
     private ImageView recipeImageView, commentImagePreview;
     private LinearLayout commentsContainer;
     private SharedPreferences sharedPreferences;
     private UserApiService userApiService;
-    private Recipe recipe;
-    private RecipeDao recipeDao;
-    private RecipeDatabase recipeDatabase;
     private ImageButton likeButton;
     private long recipeId, userId;
     private int likeCount = 0;
@@ -93,7 +86,6 @@ public class RecipeViewFragment extends Fragment {
         categoryTextView = view.findViewById(R.id.recipeCategory);
         cookTimeTextView = view.findViewById(R.id.recipeCookTime);
         descriptionTextView = view.findViewById(R.id.recipeDescription);
-        recipePrivate = view.findViewById(R.id.recipePrivate);
         likesTextView = view.findViewById(R.id.recipeLikes);
         recipeImageView = view.findViewById(R.id.ivRecipeImage); // ImageView for recipe image
         commentsContainer = view.findViewById(R.id.commentsContainer);
@@ -104,8 +96,6 @@ public class RecipeViewFragment extends Fragment {
         commentSubmit = view.findViewById(R.id.commentSubmit);
         btnSelectCommentImage = view.findViewById(R.id.btnSelectCommentImage);
         commentImagePreview = view.findViewById(R.id.commentImagePreview);
-        recipeDatabase = RecipeDatabase.getInstance(requireContext());
-        recipeDao = recipeDatabase.recipeDao();
 
         btnEditRecipe.setVisibility(View.GONE); // default hide the edit button
 
@@ -183,7 +173,6 @@ public class RecipeViewFragment extends Fragment {
                             favorites.add(String.valueOf(recipeId));
                             editor.putStringSet("favorites", favorites);
                             editor.apply();
-                            saveRecipeToLocalDatabase(recipe);
                             UserApiService userApiService = RetrofitClient.getClient().create(UserApiService.class);
                             Call<User> callObject = userApiService.addRecipeToFavorites(userId, recipeId);
 
@@ -206,7 +195,6 @@ public class RecipeViewFragment extends Fragment {
                             favorites.remove(String.valueOf(recipeId));
                             editor.putStringSet("favorites", favorites);
                             editor.apply();
-                            deleteRecipeFromDatabase(recipe);
                             UserApiService userApiService = RetrofitClient.getClient().create(UserApiService.class);
                             Call<User> callObject = userApiService.removeRecipeFromFavorites(userId, recipeId);
 
@@ -285,26 +273,27 @@ public class RecipeViewFragment extends Fragment {
             return;
         }
 
-        JSONObject json = new JSONObject();
-        try {
-            json.put("recipeId", recipeId);
-            json.put("userId", userId);
-            json.put("content", content);
+        // Wrap text values as RequestBody
+        RequestBody recipeIdBody = RequestBody.create(MediaType.parse("text/plain"), String.valueOf(recipeId));
+        RequestBody userIdBody = RequestBody.create(MediaType.parse("text/plain"), String.valueOf(userId));
+        RequestBody contentBody = RequestBody.create(MediaType.parse("text/plain"), content);
 
-            if (imageUri != null) {
-                File copied = copyUriToFile(imageUri);
-                json.put("imagePath", copied.getAbsolutePath());
+        // Optional image part
+        MultipartBody.Part imagePart = null;
+        if (imageUri != null) {
+            try {
+                File file = copyUriToFile(imageUri);
+                RequestBody fileReqBody = RequestBody.create(MediaType.parse("image/*"), file);
+                imagePart = MultipartBody.Part.createFormData("image", file.getName(), fileReqBody);
+            } catch (IOException e) {
+                Toast.makeText(getContext(), "Failed to process image: " + e.getMessage(), Toast.LENGTH_SHORT).show();
+                return;
             }
-        } catch (Exception e) {
-            Toast.makeText(getContext(), "Error building comment JSON: " + e.getMessage(), Toast.LENGTH_SHORT).show();
-            return;
         }
 
-        MediaType mediaType = MediaType.get("application/json; charset=utf-8");
-        RequestBody requestBody = RequestBody.create(mediaType, json.toString());
-
+        // Make the API call
         RecipeApiService apiService = RetrofitClient.getClient().create(RecipeApiService.class);
-        apiService.postCommentJson(requestBody).enqueue(new Callback<Comment>() {
+        apiService.postCommentMultipart(recipeIdBody, userIdBody, contentBody, imagePart).enqueue(new Callback<Comment>() {
             @Override
             public void onResponse(Call<Comment> call, Response<Comment> response) {
                 if (response.isSuccessful()) {
@@ -325,6 +314,7 @@ public class RecipeViewFragment extends Fragment {
 
 
 
+
     private void fetchRecipeDetails(long recipeId) {
         RecipeApiService apiService = RetrofitClient.getClient().create(RecipeApiService.class);
         Call<Recipe> call = apiService.getRecipeById(recipeId);
@@ -333,7 +323,7 @@ public class RecipeViewFragment extends Fragment {
             @Override
             public void onResponse(Call<Recipe> call, Response<Recipe> response) {
                 if (response.isSuccessful() && response.body() != null) {
-                    recipe = response.body();
+                    Recipe recipe = response.body();
                     displayRecipeDetails(recipe);
                 } else {
                     Log.e("API Error", "Failed to fetch recipe details: " + response.errorBody());
@@ -355,7 +345,6 @@ public class RecipeViewFragment extends Fragment {
         cookTimeTextView.setText("Duration: " + recipe.getCookTime() + " min");
         descriptionTextView.setText("Description: " + recipe.getDescription());
         likesTextView.setText("Likes: " + recipe.getLikeCount());
-        recipePrivate.setText("PostPrivate :" + recipe.isPrivatePost());
 
         // Handle ImageView visibility
         if (recipe.getImage() != null && recipe.getImage().getUrl() != null && !recipe.getImage().getUrl().isEmpty()) {
@@ -372,12 +361,6 @@ public class RecipeViewFragment extends Fragment {
         SharedPreferences sharedPreferences = requireActivity().getSharedPreferences("UserPrefs", MODE_PRIVATE);
         userId = sharedPreferences.getLong("user_Id", -1);
         boolean isAdmin = sharedPreferences.getBoolean("isAdmin", false);
-
-        if (isAdmin){
-            recipePrivate.setVisibility(View.VISIBLE);
-        } else {
-            recipePrivate.setVisibility(View.INVISIBLE);
-        }
 
         likesTextView.setText("Likes: " + recipe.getLikeCount());
 
@@ -481,7 +464,6 @@ public class RecipeViewFragment extends Fragment {
             public void onResponse(Call<Void> call, Response<Void> response) {
                 if (response.isSuccessful()) {
                     // Handle success response, possibly showing the success message
-                    deleteRecipeFromDatabase(recipe);
                     Toast.makeText(getContext(), "Recipe deleted!", Toast.LENGTH_SHORT).show();
 
                     // Navigate to the RecipesViewFragment or back to the previous screen
@@ -499,94 +481,6 @@ public class RecipeViewFragment extends Fragment {
                 Toast.makeText(getContext(), "Network error: " + t.getMessage(), Toast.LENGTH_SHORT).show();
             }
         });
-    }
-
-    private void saveRecipeToLocalDatabase(Recipe recipe) {
-        // Get the image URL from the Image object in the Recipe class
-        Image image = recipe.getImage();
-        String imageUrl = null;
-
-        if (image != null) {
-            imageUrl = image.getUrl();
-        }
-
-        // Convert other fields from Recipe to RecipeEntity
-        Long id = recipe.getId();
-        String name = recipe.getName();
-        String description = recipe.getDescription();
-        String category = recipe.getCategory();
-        int cookTime = recipe.getCookTime();
-        boolean privatePost = recipe.isPrivatePost();
-        Long userId = recipe.getUserId();
-        int likeCount = recipe.getLikeCount();
-        Date creationDate = recipe.getCreationDate();
-        List<Long> likedUserIDs = recipe.getLikedUserIDs();
-        List<Comment> comments = recipe.getComments();
-
-        // Create RecipeEntity
-        RecipeEntity recipeEntity = new RecipeEntity(
-                id,
-                name,
-                description,
-                category,
-                cookTime,
-                privatePost,
-                userId,
-                likeCount,
-                imageUrl,
-                creationDate,
-                likedUserIDs,
-                comments
-        );
-        Log.d("LocalDatabase", "Recipe saved successfully with ID: " + recipeEntity.getId());
-
-
-        // Save to database in background thread
-        new Thread(() -> recipeDao.insertRecipe(recipeEntity)).start();
-    }
-
-    public void deleteRecipeFromDatabase(Recipe recipe){
-
-        Image image = recipe.getImage();
-        String imageUrl = null;
-
-        if (image != null) {
-            imageUrl = image.getUrl();
-        }
-
-        // Convert other fields from Recipe to RecipeEntity
-        Long id = recipe.getId();
-        String name = recipe.getName();
-        String description = recipe.getDescription();
-        String category = recipe.getCategory();
-        int cookTime = recipe.getCookTime();
-        boolean privatePost = recipe.isPrivatePost();
-        Long userId = recipe.getUserId();
-        int likeCount = recipe.getLikeCount();
-        Date creationDate = recipe.getCreationDate();
-        List<Long> likedUserIDs = recipe.getLikedUserIDs();
-        List<Comment> comments = recipe.getComments();
-
-        // Create RecipeEntity
-        RecipeEntity recipeEntity = new RecipeEntity(
-                id,
-                name,
-                description,
-                category,
-                cookTime,
-                privatePost,
-                userId,
-                likeCount,
-                imageUrl,
-                creationDate,
-                likedUserIDs,
-                comments
-        );
-        Log.d("LocalDatabase", "Recipe saved successfully with ID: " + recipeEntity.getId());
-
-
-
-        new Thread(() -> recipeDao.deleteRecipe(recipeEntity)).start();
     }
 }
 
