@@ -101,7 +101,7 @@
                 android:text="Likes: 1"
                 android:textSize="16sp" />
 
-                    
+
             <ImageButton
                 android:id="@+id/btnLike"
                 android:layout_width="wrap_content"
@@ -195,4 +195,3 @@
 
     </LinearLayout>
 </androidx.core.widget.NestedScrollView>
-
