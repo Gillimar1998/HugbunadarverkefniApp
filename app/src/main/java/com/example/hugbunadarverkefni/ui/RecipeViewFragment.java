@@ -5,9 +5,13 @@ import static android.content.Context.MODE_PRIVATE;
 import android.app.AlertDialog;
 import android.content.Context;
 import android.content.SharedPreferences;
+import android.graphics.Bitmap;
+import android.graphics.Color;
 import android.os.Build;
 import android.os.Bundle;
+import android.provider.MediaStore;
 import android.util.Log;
+import android.view.Gravity;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -18,6 +22,7 @@ import android.widget.LinearLayout;
 import android.widget.TextView;
 import android.widget.Toast;
 import androidx.annotation.NonNull;
+import androidx.core.content.FileProvider;
 import androidx.fragment.app.Fragment;
 import android.widget.EditText;
 import android.content.Intent;
@@ -71,10 +76,15 @@ public class RecipeViewFragment extends Fragment {
     private ImageButton likeButton;
     private long recipeId, userId;
     private int likeCount = 0;
-    private Button btnDeleteRecipe, btnEditRecipe, commentSubmit, btnSelectCommentImage;
+    private Button btnDeleteRecipe, btnEditRecipe;
+
+    private ImageButton commentSubmit, btnSelectCommentImage;
     private EditText commentInput;
     private ActivityResultLauncher<Intent> imagePickerLauncher;
     private Uri imageUri;
+    private ActivityResultLauncher<Intent> editImageLauncher;
+    private Uri selectedEditImageUri;
+    private ImageView editImagePreviewRef;
 
 
     @Override
@@ -93,7 +103,7 @@ public class RecipeViewFragment extends Fragment {
         btnDeleteRecipe = view.findViewById(R.id.btnDeleteRecipe);
         btnEditRecipe = view.findViewById(R.id.btnEditRecipe);
         commentInput = view.findViewById(R.id.commentInput);
-        commentSubmit = view.findViewById(R.id.commentSubmit);
+        commentSubmit = view.findViewById(R.id.commentSubmit); // ✅
         btnSelectCommentImage = view.findViewById(R.id.btnSelectCommentImage);
         commentImagePreview = view.findViewById(R.id.commentImagePreview);
 
@@ -119,12 +129,24 @@ public class RecipeViewFragment extends Fragment {
                 new ActivityResultContracts.StartActivityForResult(),
                 result -> {
                     if (result.getResultCode() == RESULT_OK && result.getData() != null) {
-                        Uri selectedImage = result.getData().getData();
-                        if (selectedImage != null) {
+                        Uri selectedImage = null;
+
+                        if (result.getData().getData() != null) {
+                            // Image from gallery
+                            selectedImage = result.getData().getData();
                             requireContext().getContentResolver().takePersistableUriPermission(
                                     selectedImage,
                                     Intent.FLAG_GRANT_READ_URI_PERMISSION
                             );
+                        } else if (result.getData().getExtras() != null) {
+                            // Image from camera (thumbnail)
+                            Bitmap photo = (Bitmap) result.getData().getExtras().get("data");
+
+                            // Save it to a temp file and get a URI
+                            selectedImage = saveBitmapToUri(photo);
+                        }
+
+                        if (selectedImage != null) {
                             imageUri = selectedImage;
                             commentImagePreview.setVisibility(View.VISIBLE);
                             commentImagePreview.setImageURI(imageUri);
@@ -136,6 +158,26 @@ public class RecipeViewFragment extends Fragment {
                     }
                 }
         );
+        editImageLauncher = registerForActivityResult(
+                new ActivityResultContracts.StartActivityForResult(),
+                result -> {
+                    if (result.getResultCode() == RESULT_OK && result.getData() != null) {
+                        Uri selectedImage = result.getData().getData();
+                        if (selectedImage != null) {
+                            requireContext().getContentResolver().takePersistableUriPermission(
+                                    selectedImage,
+                                    Intent.FLAG_GRANT_READ_URI_PERMISSION
+                            );
+                            selectedEditImageUri = selectedImage;
+                            if (editImagePreviewRef != null) {
+                                editImagePreviewRef.setImageURI(selectedImage);
+                            }
+                        }
+                    }
+                }
+        );
+
+
 
 
         // Like button click event
@@ -234,10 +276,19 @@ public class RecipeViewFragment extends Fragment {
 
     private void openImageChooser() {
         try {
-            Intent intent = new Intent(Intent.ACTION_OPEN_DOCUMENT);
-            intent.setType("image/*");
-            intent.addCategory(Intent.CATEGORY_OPENABLE);
-            imagePickerLauncher.launch(intent);
+            Intent galleryIntent = new Intent(Intent.ACTION_OPEN_DOCUMENT);
+            galleryIntent.setType("image/*");
+            galleryIntent.addCategory(Intent.CATEGORY_OPENABLE);
+
+            Intent cameraIntent = new Intent(MediaStore.ACTION_IMAGE_CAPTURE);
+
+            // Create a chooser intent
+            Intent chooser = Intent.createChooser(galleryIntent, "Select or take a picture");
+
+            // Add the camera intent as an option
+            chooser.putExtra(Intent.EXTRA_INITIAL_INTENTS, new Intent[]{cameraIntent});
+
+            imagePickerLauncher.launch(chooser);
         } catch (Exception e) {
             Toast.makeText(getContext(), "Could not open image picker: " + e.getMessage(), Toast.LENGTH_SHORT).show();
         }
@@ -300,6 +351,7 @@ public class RecipeViewFragment extends Fragment {
                     Toast.makeText(getContext(), "Comment added!", Toast.LENGTH_SHORT).show();
                     commentInput.setText("");
                     commentImagePreview.setVisibility(View.GONE);
+                    fetchRecipeDetails(recipeId); // ✅ refresh comments
                 } else {
                     Toast.makeText(getContext(), "Failed to add comment", Toast.LENGTH_SHORT).show();
                 }
@@ -387,19 +439,59 @@ public class RecipeViewFragment extends Fragment {
                 commentLayout.setOrientation(LinearLayout.VERTICAL);
                 commentLayout.setPadding(10, 5, 10, 5);
 
-                // TextView for comment text
+                LinearLayout commentRow = new LinearLayout(getContext());
+                commentRow.setOrientation(LinearLayout.HORIZONTAL);
+                commentRow.setLayoutParams(new LinearLayout.LayoutParams(
+                        LinearLayout.LayoutParams.MATCH_PARENT,
+                        LinearLayout.LayoutParams.WRAP_CONTENT
+                ));
+                commentRow.setGravity(Gravity.CENTER_VERTICAL);
+
+                // Comment Text
                 TextView commentView = new TextView(getContext());
                 commentView.setText(comment.getUser().getUsername() + ": " + comment.getContent());
                 commentView.setTextSize(14f);
-                commentLayout.addView(commentView);
+                commentView.setLayoutParams(new LinearLayout.LayoutParams(
+                        0, LinearLayout.LayoutParams.WRAP_CONTENT, 1f // Push buttons to the right
+                ));
+                commentRow.addView(commentView);
 
-                // ImageView for comment image (if available)
+                long currentUserId = sharedPreferences.getLong("user_Id", -1);
+
+                if (comment.getUser().getId() == currentUserId || isAdmin) {
+                    LinearLayout buttonLayout = new LinearLayout(getContext());
+                    buttonLayout.setOrientation(LinearLayout.HORIZONTAL);
+
+                    if (comment.getUser().getId() == currentUserId) {
+                        // Edit Button
+                        ImageButton editButton = new ImageButton(getContext());
+                        editButton.setImageResource(R.drawable.ic_edit);
+                        editButton.setBackgroundColor(Color.TRANSPARENT);
+                        editButton.setColorFilter(Color.parseColor("#2196F3"));
+                        editButton.setPadding(10, 10, 10, 10);
+                        editButton.setOnClickListener(v -> showEditCommentDialog(comment));
+                        buttonLayout.addView(editButton);
+                    }
+
+                    // Delete Button
+                    ImageButton deleteButton = new ImageButton(getContext());
+                    deleteButton.setImageResource(R.drawable.ic_trash);
+                    deleteButton.setBackgroundColor(Color.TRANSPARENT);
+                    deleteButton.setColorFilter(Color.parseColor("#F44336"));
+                    deleteButton.setPadding(10, 10, 10, 10);
+                    deleteButton.setOnClickListener(v -> deleteComment(comment.getId()));
+                    buttonLayout.addView(deleteButton);
+
+                    commentRow.addView(buttonLayout);
+                }
+
+                commentLayout.addView(commentRow);
+
+                // Optional Image (shown below the text + buttons)
                 if (comment.getImage() != null && comment.getImage().getUrl() != null) {
                     ImageView commentImageView = new ImageView(getContext());
-                    commentImageView.setLayoutParams(new LinearLayout.LayoutParams(200, 200)); // Image size
+                    commentImageView.setLayoutParams(new LinearLayout.LayoutParams(200, 200));
                     commentImageView.setScaleType(ImageView.ScaleType.CENTER_CROP);
-
-                    // Load image using Glide
                     Glide.with(this)
                             .load(comment.getImage().getUrl())
                             .placeholder(R.drawable.ic_placeholder_image)
@@ -422,12 +514,16 @@ public class RecipeViewFragment extends Fragment {
 
     private void deleteComment(long commentId) {
         RecipeApiService apiService = RetrofitClient.getClient().create(RecipeApiService.class);
-        apiService.deleteComment(recipeId, commentId).enqueue(new Callback<Void>() {
+        long userId = requireActivity().getSharedPreferences("UserPrefs", MODE_PRIVATE).getLong("user_Id", -1);
+
+        apiService.deleteComment(commentId, userId).enqueue(new Callback<Void>() {
             @Override
             public void onResponse(Call<Void> call, Response<Void> response) {
                 if (response.isSuccessful()) {
                     Toast.makeText(getContext(), "Comment deleted", Toast.LENGTH_SHORT).show();
                     fetchRecipeDetails(recipeId);
+                } else {
+                    Toast.makeText(getContext(), "Failed to delete comment", Toast.LENGTH_SHORT).show();
                 }
             }
 
@@ -437,6 +533,128 @@ public class RecipeViewFragment extends Fragment {
             }
         });
     }
+    private Uri saveBitmapToUri(Bitmap bitmap) {
+        File imageFile = new File(requireContext().getCacheDir(), "camera_image.jpg");
+        try (FileOutputStream out = new FileOutputStream(imageFile)) {
+            bitmap.compress(Bitmap.CompressFormat.JPEG, 100, out);
+            out.flush();
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+
+        return FileProvider.getUriForFile(
+                requireContext(),
+                requireContext().getPackageName() + ".fileprovider",
+                imageFile
+        );
+
+    }
+
+    private void showEditCommentDialog(Comment comment) {
+        AlertDialog.Builder builder = new AlertDialog.Builder(getContext());
+        builder.setTitle("Edit Comment");
+
+        // Create layout
+        LinearLayout layout = new LinearLayout(getContext());
+        layout.setOrientation(LinearLayout.VERTICAL);
+        layout.setPadding(20, 20, 20, 20);
+
+        // EditText for comment text
+        final EditText input = new EditText(getContext());
+        input.setText(comment.getContent());
+        layout.addView(input);
+
+        // ImageView for preview
+        final ImageView imagePreview = new ImageView(getContext());
+        imagePreview.setLayoutParams(new LinearLayout.LayoutParams(400, 400));
+        imagePreview.setScaleType(ImageView.ScaleType.CENTER_CROP);
+        layout.addView(imagePreview);
+
+        // If existing image
+        if (comment.getImage() != null && comment.getImage().getUrl() != null) {
+            Glide.with(this).load(comment.getImage().getUrl()).into(imagePreview);
+        }
+
+        // Save image preview ref globally so the launcher can access it
+        editImagePreviewRef = imagePreview;
+
+        // Button to pick image
+        Button selectImageButton = new Button(getContext());
+        selectImageButton.setText("Change Image");
+        layout.addView(selectImageButton);
+
+        // Button click opens image picker
+        selectImageButton.setOnClickListener(v -> {
+            selectedEditImageUri = null; // Reset before opening picker
+            Intent intent = new Intent(Intent.ACTION_OPEN_DOCUMENT);
+            intent.setType("image/*");
+            intent.addCategory(Intent.CATEGORY_OPENABLE);
+            editImageLauncher.launch(intent);
+        });
+
+        builder.setView(layout);
+
+        builder.setPositiveButton("Save", (dialog, which) -> {
+            String updatedText = input.getText().toString().trim();
+            if (TextUtils.isEmpty(updatedText)) {
+                Toast.makeText(getContext(), "Comment cannot be empty", Toast.LENGTH_SHORT).show();
+                return;
+            }
+
+            MultipartBody.Part imagePart = null;
+            if (selectedEditImageUri != null) {
+                try {
+                    File imageFile = copyUriToFile(selectedEditImageUri);
+                    RequestBody fileBody = RequestBody.create(MediaType.parse("image/*"), imageFile);
+                    imagePart = MultipartBody.Part.createFormData("image", imageFile.getName(), fileBody);
+                } catch (IOException e) {
+                    Toast.makeText(getContext(), "Failed to process image", Toast.LENGTH_SHORT).show();
+                    return;
+                }
+            }
+
+            updateComment(comment.getId(), updatedText, imagePart);
+        });
+
+        builder.setNegativeButton("Cancel", (dialog, which) -> dialog.dismiss());
+
+        builder.show();
+    }
+
+    private void updateComment(long commentId, String newText, MultipartBody.Part imagePart) {
+        RecipeApiService apiService = RetrofitClient.getClient().create(RecipeApiService.class);
+
+        RequestBody userIdBody = RequestBody.create(MediaType.parse("text/plain"), String.valueOf(userId));
+        RequestBody contentBody = RequestBody.create(MediaType.parse("text/plain"), newText);
+
+        apiService.patchComment(commentId, userIdBody, contentBody, imagePart)
+                .enqueue(new Callback<Comment>() {
+                    @Override
+                    public void onResponse(Call<Comment> call, Response<Comment> response) {
+                        if (response.isSuccessful()) {
+                            Toast.makeText(getContext(), "Comment updated", Toast.LENGTH_SHORT).show();
+
+                            // ✅ Clear image URI used during editing
+                            // (Only if you're using something like a global editSelectedImageUri or temp image URI array)
+                            imageUri = null; // For new comments
+                            // If you're using selectedImageUri[0], you could do: selectedImageUri[0] = null;
+
+                            fetchRecipeDetails(recipeId); // Refresh
+                        } else {
+                            Toast.makeText(getContext(), "Failed to update comment", Toast.LENGTH_SHORT).show();
+                        }
+                    }
+
+                    @Override
+                    public void onFailure(Call<Comment> call, Throwable t) {
+                        Toast.makeText(getContext(), "Network error: " + t.getMessage(), Toast.LENGTH_SHORT).show();
+                    }
+                });
+    }
+
+
+
+
 
     private void navigateToEditRecipe(long recipeId) {
         Bundle bundle = new Bundle();

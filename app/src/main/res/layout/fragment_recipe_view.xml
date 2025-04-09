@@ -120,15 +120,61 @@
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:orientation="vertical"/>
-
-        <EditText
-            android:id="@+id/commentInput"
+        <LinearLayout
+            android:id="@+id/commentInputLayout"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:hint="Write a comment..."
-            android:layout_marginTop="10dp" />
+            android:orientation="horizontal"
+            android:gravity="center_vertical"
+            android:layout_marginTop="10dp">
 
-        <!-- Comment Image Preview -->
+            <EditText
+                android:id="@+id/commentInput"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:hint="Write a comment..."
+                android:padding="10dp"
+                android:background="@android:drawable/edit_text"
+                android:inputType="textMultiLine" />
+
+            <FrameLayout
+                android:layout_width="48dp"
+                android:layout_height="48dp"
+                android:layout_marginStart="4dp"
+                android:layout_marginEnd="4dp">
+
+                <ImageButton
+                    android:id="@+id/btnSelectCommentImage"
+                    android:layout_width="match_parent"
+                    android:layout_height="match_parent"
+                    android:src="@drawable/ic_image"
+                    android:background="@android:color/transparent"
+                    app:tint="#6A2C0F"
+                    android:contentDescription="@string/add_image" />
+            </FrameLayout>
+
+
+
+            <FrameLayout
+                android:layout_width="48dp"
+                android:layout_height="48dp"
+                android:layout_marginStart="4dp"
+                android:layout_marginEnd="4dp">
+
+                <ImageButton
+                    android:id="@+id/commentSubmit"
+                    android:layout_width="match_parent"
+                    android:layout_height="match_parent"
+                    android:src="@drawable/ic_send"
+                    android:background="?attr/selectableItemBackgroundBorderless"
+                    app:tint="#6A2C0F"
+                    android:contentDescription="@string/send_comment" />
+            </FrameLayout>
+
+        </LinearLayout>
+
+        <!-- Image Preview Below -->
         <ImageView
             android:id="@+id/commentImagePreview"
             android:layout_width="200dp"
@@ -137,26 +183,6 @@
             android:scaleType="centerCrop"
             android:src="@drawable/ic_placeholder_image"
             android:visibility="gone" />
-
-        <!-- Select Image Button -->
-        <Button
-            android:id="@+id/btnSelectCommentImage"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:backgroundTint="#6A2C0F"
-            android:textColor="#FFFFFF"
-            android:text="Select Comment Image"
-            android:layout_marginTop="8dp"/>
-
-        <!-- Submit Comment Button -->
-        <Button
-            android:id="@+id/commentSubmit"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:backgroundTint="#6A2C0F"
-            android:textColor="#FFFFFF"
-            android:text="Submit Comment"
-            android:layout_marginTop="5dp" />
 
 
         <!-- Buttons Layout for Edit and Delete -->
